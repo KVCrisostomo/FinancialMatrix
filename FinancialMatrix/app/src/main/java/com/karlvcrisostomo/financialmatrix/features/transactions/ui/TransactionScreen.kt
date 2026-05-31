@@ -1,5 +1,6 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -14,6 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,9 @@ fun TransactionScreen(
     val cashSpent = uiState.transactions.filter { !it.isCreditCard }.sumOf { it.amount }
     val creditSpent = uiState.transactions.filter { it.isCreditCard }.sumOf { it.amount }
     
+    val categoryAmounts = uiState.transactions.groupBy { it.category }
+        .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
+
     val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
     val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0
 
@@ -80,6 +86,19 @@ fun TransactionScreen(
                             Text(text = "Credit: ₱${String.format(Locale.US, "%.2f", creditSpent)}", style = MaterialTheme.typography.bodyMedium)
                             Text(text = "${String.format(Locale.US, "%.1f", creditPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                         }
+                    }
+                    
+                    if (totalSpent > 0) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "Spending Distribution", style = MaterialTheme.typography.labelSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SpendingDistributionChart(
+                            categoryAmounts = categoryAmounts,
+                            totalAmount = totalSpent,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(12.dp)
+                        )
                     }
                 }
             }
@@ -272,5 +291,39 @@ fun CategoryBadge(category: String) {
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
+    }
+}
+
+@Composable
+fun SpendingDistributionChart(
+    categoryAmounts: Map<String, Double>,
+    totalAmount: Double,
+    modifier: Modifier = Modifier
+) {
+    val categoryColors = mapOf(
+        "Food" to MaterialTheme.colorScheme.error,
+        "Utilities" to MaterialTheme.colorScheme.tertiary,
+        "Transport" to MaterialTheme.colorScheme.primary,
+        "Entertainment" to MaterialTheme.colorScheme.secondary,
+        "Other" to MaterialTheme.colorScheme.outline
+    )
+
+    Canvas(modifier = modifier) {
+        var currentX = 0f
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+
+        categoryAmounts.forEach { (category, amount) ->
+            val fraction = (amount / totalAmount).toFloat()
+            val segmentWidth = canvasWidth * fraction
+            val color = categoryColors[category] ?: Color.Gray
+
+            drawRect(
+                color = color,
+                topLeft = Offset(currentX, 0f),
+                size = Size(segmentWidth, canvasHeight)
+            )
+            currentX += segmentWidth
+        }
     }
 }
