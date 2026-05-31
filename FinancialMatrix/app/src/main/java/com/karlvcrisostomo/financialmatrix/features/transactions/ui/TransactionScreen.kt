@@ -1,9 +1,11 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -30,6 +32,9 @@ fun TransactionScreen(
     val totalSpent = uiState.transactions.sumOf { it.amount }
     val cashSpent = uiState.transactions.filter { !it.isCreditCard }.sumOf { it.amount }
     val creditSpent = uiState.transactions.filter { it.isCreditCard }.sumOf { it.amount }
+    
+    val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
+    val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -66,9 +71,37 @@ fun TransactionScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Cash: ₱${String.format(Locale.US, "%.2f", cashSpent)}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "Credit: ₱${String.format(Locale.US, "%.2f", creditSpent)}", style = MaterialTheme.typography.bodyMedium)
+                        Column {
+                            Text(text = "Cash: ₱${String.format(Locale.US, "%.2f", cashSpent)}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "${String.format(Locale.US, "%.1f", cashPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(text = "Credit: ₱${String.format(Locale.US, "%.2f", creditSpent)}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "${String.format(Locale.US, "%.1f", creditPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                        }
                     }
+                }
+            }
+
+            // Category Filters
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.selectedCategory == null,
+                    onClick = { viewModel.updateCategoryFilter(null) },
+                    label = { Text("All") }
+                )
+                uiState.availableCategories.forEach { category ->
+                    FilterChip(
+                        selected = uiState.selectedCategory == category,
+                        onClick = { viewModel.updateCategoryFilter(category) },
+                        label = { Text(category) }
+                    )
                 }
             }
 

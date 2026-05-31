@@ -12,5 +12,7 @@ data class TransactionUiState(
     val isLoading: Boolean = false,
     val transactions: List<TransactionEntity> = emptyList(),
     val sortOrder: TransactionSortOrder = TransactionSortOrder.LATEST,
+    val selectedCategory: String? = null,
+    val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null
 )

@@ -20,32 +20,51 @@ class TransactionViewModel(
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
+    private val _selectedCategory = MutableStateFlow<String?>(null)
+    
+    private val standardCategories = listOf("Food", "Utilities", "Transport", "Entertainment", "Other")
 
     // Transform the raw database Flow into a cold state stream for the UI
-    val uiState: StateFlow<TransactionUiState> = repository.getAllTransactions()
-        .combine(_sortOrder) { transactionList, sortOrder ->
-            val sortedList = when (sortOrder) {
-                TransactionSortOrder.LATEST -> transactionList.sortedByDescending { it.id }
-                TransactionSortOrder.HIGHEST_AMOUNT -> transactionList.sortedByDescending { it.amount }
-                TransactionSortOrder.LOWEST_AMOUNT -> transactionList.sortedBy { it.amount }
-            }
-            TransactionUiState(
-                transactions = sortedList,
-                sortOrder = sortOrder,
-                isLoading = false
-            )
+    val uiState: StateFlow<TransactionUiState> = combine(
+        repository.getAllTransactions(),
+        _sortOrder,
+        _selectedCategory
+    ) { transactionList, sortOrder, category ->
+        val filteredList = if (category == null) {
+            transactionList
+        } else {
+            transactionList.filter { it.category == category }
         }
-        .catch { exception ->
-            emit(TransactionUiState(errorMessage = exception.message, isLoading = false))
+
+        val sortedList = when (sortOrder) {
+            TransactionSortOrder.LATEST -> filteredList.sortedByDescending { it.id }
+            TransactionSortOrder.HIGHEST_AMOUNT -> filteredList.sortedByDescending { it.amount }
+            TransactionSortOrder.LOWEST_AMOUNT -> filteredList.sortedBy { it.amount }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000), // Grace period for configuration changes (like screen rotations)
-            initialValue = TransactionUiState(isLoading = true)
+
+        TransactionUiState(
+            transactions = sortedList,
+            sortOrder = sortOrder,
+            selectedCategory = category,
+            availableCategories = standardCategories,
+            isLoading = false
         )
+    }
+    .catch { exception ->
+        emit(TransactionUiState(errorMessage = exception.message, isLoading = false))
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000), // Grace period for configuration changes (like screen rotations)
+        initialValue = TransactionUiState(isLoading = true)
+    )
 
     fun updateSortOrder(order: TransactionSortOrder) {
         _sortOrder.value = order
+    }
+
+    fun updateCategoryFilter(category: String?) {
+        _selectedCategory.value = category
     }
 
     fun addTransaction(transaction: TransactionEntity) {
