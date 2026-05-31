@@ -7,10 +7,11 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.karlvcrisostomo.financialmatrix.FinancialMatrixApplication
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,10 +19,21 @@ class TransactionViewModel(
     private val repository: TransactionRepository
 ) : ViewModel() {
 
+    private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
+
     // Transform the raw database Flow into a cold state stream for the UI
     val uiState: StateFlow<TransactionUiState> = repository.getAllTransactions()
-        .map { transactionList ->
-            TransactionUiState(transactions = transactionList, isLoading = false)
+        .combine(_sortOrder) { transactionList, sortOrder ->
+            val sortedList = when (sortOrder) {
+                TransactionSortOrder.LATEST -> transactionList.sortedByDescending { it.id }
+                TransactionSortOrder.HIGHEST_AMOUNT -> transactionList.sortedByDescending { it.amount }
+                TransactionSortOrder.LOWEST_AMOUNT -> transactionList.sortedBy { it.amount }
+            }
+            TransactionUiState(
+                transactions = sortedList,
+                sortOrder = sortOrder,
+                isLoading = false
+            )
         }
         .catch { exception ->
             emit(TransactionUiState(errorMessage = exception.message, isLoading = false))
@@ -31,6 +43,10 @@ class TransactionViewModel(
             started = SharingStarted.WhileSubscribed(5000), // Grace period for configuration changes (like screen rotations)
             initialValue = TransactionUiState(isLoading = true)
         )
+
+    fun updateSortOrder(order: TransactionSortOrder) {
+        _sortOrder.value = order
+    }
 
     fun addTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {

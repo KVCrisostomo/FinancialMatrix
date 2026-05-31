@@ -14,14 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
-import java.util.Locale // 1. Added explicit Java standard utility import
-
-enum class TransactionSortOrder(val displayName: String) {
-    LATEST(displayName = "Latest"),
-    HIGHEST_AMOUNT(displayName = "Highest ₱"),
-    LOWEST_AMOUNT(displayName = "Lowest ₱")
-}
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,19 +26,10 @@ fun TransactionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val showAddDialog = remember { mutableStateOf(false) }
-    var currentSortOrder by remember { mutableStateOf(TransactionSortOrder.LATEST) }
 
     val totalSpent = uiState.transactions.sumOf { it.amount }
     val cashSpent = uiState.transactions.filter { !it.isCreditCard }.sumOf { it.amount }
     val creditSpent = uiState.transactions.filter { it.isCreditCard }.sumOf { it.amount }
-
-    val sortedTransactions = remember(uiState.transactions, currentSortOrder) {
-        when (currentSortOrder) {
-            TransactionSortOrder.LATEST -> uiState.transactions.sortedByDescending { it.id }
-            TransactionSortOrder.HIGHEST_AMOUNT -> uiState.transactions.sortedByDescending { it.amount }
-            TransactionSortOrder.LOWEST_AMOUNT -> uiState.transactions.sortedBy { it.amount }
-        }
-    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -94,10 +80,10 @@ fun TransactionScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 TransactionSortOrder.entries.forEach { order ->
-                    val isSelected = currentSortOrder == order
+                    val isSelected = uiState.sortOrder == order
                     Box(
                         modifier = Modifier
-                            .clickable { currentSortOrder = order }
+                            .clickable { viewModel.updateSortOrder(order) }
                             .padding(vertical = 4.dp)
                     ) {
                         Text(
@@ -120,7 +106,7 @@ fun TransactionScreen(
                 uiState.errorMessage != null -> {
                     Text(text = "Error: ${uiState.errorMessage}", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
                 }
-                sortedTransactions.isEmpty() -> {
+                uiState.transactions.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(text = "No transactions found.\nTap the + button to seed data.", modifier = Modifier.padding(16.dp))
                     }
@@ -131,7 +117,7 @@ fun TransactionScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp)
                     ) {
-                        items(sortedTransactions, key = { it.id }) { transaction ->
+                        items(uiState.transactions, key = { it.id }) { transaction ->
                             TransactionItem(
                                 transaction = transaction,
                                 onDelete = { viewModel.deleteTransaction(transaction) }
@@ -173,11 +159,20 @@ fun TransactionItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = transaction.description, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${transaction.category} • ${if (transaction.isCreditCard) "Credit" else "Cash"}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(text = transaction.date.toString(), style = MaterialTheme.typography.labelSmall)
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    CategoryBadge(category = transaction.category)
+                    Text(
+                        text = if (transaction.isCreditCard) "Credit" else "Cash",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                
+                Text(text = transaction.date.formatToHumanReadable(), style = MaterialTheme.typography.labelSmall)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -195,5 +190,36 @@ fun TransactionItem(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun CategoryBadge(category: String) {
+    val containerColor = when (category) {
+        "Food" -> MaterialTheme.colorScheme.errorContainer
+        "Utilities" -> MaterialTheme.colorScheme.tertiaryContainer
+        "Transport" -> MaterialTheme.colorScheme.primaryContainer
+        "Entertainment" -> MaterialTheme.colorScheme.secondaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val contentColor = when (category) {
+        "Food" -> MaterialTheme.colorScheme.onErrorContainer
+        "Utilities" -> MaterialTheme.colorScheme.onTertiaryContainer
+        "Transport" -> MaterialTheme.colorScheme.onPrimaryContainer
+        "Entertainment" -> MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        color = containerColor,
+        contentColor = contentColor,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Text(
+            text = category,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
     }
 }
