@@ -44,6 +44,15 @@ fun AddTransactionDialog(
     val categories = listOf("Food", "Utilities", "Transport", "Entertainment", "Other")
     var expanded by remember { mutableStateOf(false) }
 
+    // Derived states for validation
+    val isAmountValid = remember(amountText) {
+        amountText.toDoubleOrNull()?.let { it > 0.0 } ?: false
+    }
+    val isDescriptionValid = remember(description) {
+        description.isNotBlank()
+    }
+    val isInputValid = isDescriptionValid && isAmountValid
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Add New Transaction") },
@@ -61,6 +70,12 @@ fun AddTransactionDialog(
                     onValueChange = { amountText = it },
                     label = { Text("Amount (₱)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = amountText.isNotEmpty() && !isAmountValid,
+                    supportingText = {
+                        if (amountText.isNotEmpty() && !isAmountValid) {
+                            Text("Please enter a positive numeric amount")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -111,21 +126,18 @@ fun AddTransactionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    // 2. Parse the text to a double safely
                     val finalAmount = amountText.toDoubleOrNull() ?: 0.0
-
-                    if (description.isNotBlank() && finalAmount > 0.0) {
-                        val newTransaction = TransactionEntity(
-                            description = description,
-                            amount = finalAmount,
-                            date = LocalDate.now(),
-                            category = category,
-                            isCreditCard = isCreditCard,
-                            accountName = "Primary"
-                        )
-                        onSave(newTransaction)
-                    }
-                }
+                    val newTransaction = TransactionEntity(
+                        description = description,
+                        amount = finalAmount,
+                        date = LocalDate.now(),
+                        category = category,
+                        isCreditCard = isCreditCard,
+                        accountName = "Primary"
+                    )
+                    onSave(newTransaction)
+                },
+                enabled = isInputValid
             ) {
                 Text("Save")
             }
