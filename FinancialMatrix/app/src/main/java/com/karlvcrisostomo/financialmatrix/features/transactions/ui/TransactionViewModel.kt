@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.karlvcrisostomo.financialmatrix.FinancialMatrixApplication
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
+import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +21,8 @@ import kotlinx.coroutines.launch
 
 class TransactionViewModel(
     private val repository: TransactionRepository,
-    private val preferencesRepository: UserPreferencesRepository
+    private val preferencesRepository: UserPreferencesRepository,
+    private val workManager: WorkManager
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
@@ -94,10 +98,23 @@ class TransactionViewModel(
         }
     }
 
+    fun updateMonthlyBudgetLimit(limit: Double) {
+        viewModelScope.launch {
+            preferencesRepository.updateMonthlyBudgetLimit(limit)
+            triggerBudgetCheck()
+        }
+    }
+
     fun addTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             repository.insertTransaction(transaction)
+            triggerBudgetCheck()
         }
+    }
+
+    private fun triggerBudgetCheck() {
+        val workRequest = OneTimeWorkRequestBuilder<BudgetMonitorWorker>().build()
+        workManager.enqueue(workRequest)
     }
 
     fun deleteTransaction(transaction: TransactionEntity) {
@@ -115,7 +132,8 @@ class TransactionViewModel(
                 val application = extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as FinancialMatrixApplication
                 return TransactionViewModel(
                     application.transactionRepository,
-                    application.userPreferencesRepository
+                    application.userPreferencesRepository,
+                    WorkManager.getInstance(application)
                 ) as T
             }
         }

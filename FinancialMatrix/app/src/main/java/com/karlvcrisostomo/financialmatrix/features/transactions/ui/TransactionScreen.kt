@@ -38,6 +38,7 @@ fun TransactionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val showAddDialog = remember { mutableStateOf(false) }
+    val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -63,6 +64,10 @@ fun TransactionScreen(
 
     val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
     val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0
+    
+    val budgetLimit = uiState.userPreferences.monthlyBudgetLimit
+    val remainingBudget = budgetLimit - totalSpent
+    val budgetPercentage = if (budgetLimit > 0) (totalSpent / budgetLimit) else 0.0
     
     val currencySymbol = uiState.userPreferences.currencySymbol
 
@@ -135,6 +140,54 @@ fun TransactionScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(12.dp)
+                        )
+                    }
+                    
+                    if (budgetLimit > 0) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showBudgetDialog.value = true },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Column {
+                                Text(text = "Monthly Budget", style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    text = "$currencySymbol${String.format(Locale.US, "%.2f", budgetLimit)}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = if (remainingBudget >= 0) "Remaining" else "Over Budget",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (remainingBudget >= 0) Color.Unspecified else MaterialTheme.colorScheme.error
+                                )
+                                Text(
+                                    text = "$currencySymbol${String.format(Locale.US, "%.2f", Math.abs(remainingBudget))}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (remainingBudget >= 0) Color.Unspecified else MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        
+                        LinearProgressIndicator(
+                            progress = { budgetPercentage.coerceIn(0.0, 1.0).toFloat() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .height(8.dp),
+                            color = when {
+                                budgetPercentage >= 1.0 -> MaterialTheme.colorScheme.error
+                                budgetPercentage >= 0.8 -> Color(0xFFFFA500) // Orange
+                                else -> MaterialTheme.colorScheme.primary
+                            },
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                         )
                     }
                 }
@@ -245,6 +298,41 @@ fun TransactionScreen(
             onSave = { newTransaction ->
                 viewModel.addTransaction(newTransaction)
                 showAddDialog.value = false
+            }
+        )
+    }
+
+    if (showBudgetDialog.value) {
+        var budgetText by remember { mutableStateOf(budgetLimit.toString()) }
+        AlertDialog(
+            onDismissRequest = { showBudgetDialog.value = false },
+            title = { Text("Set Monthly Budget") },
+            text = {
+                OutlinedTextField(
+                    value = budgetText,
+                    onValueChange = { budgetText = it },
+                    label = { Text("Budget Amount ($currencySymbol)") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val newLimit = budgetText.toDoubleOrNull() ?: 0.0
+                        viewModel.updateMonthlyBudgetLimit(newLimit)
+                        showBudgetDialog.value = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBudgetDialog.value = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }

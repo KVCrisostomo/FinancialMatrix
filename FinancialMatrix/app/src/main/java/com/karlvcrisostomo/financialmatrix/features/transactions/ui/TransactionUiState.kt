@@ -15,7 +15,11 @@ data class TransactionUiState(
     val sortOrder: TransactionSortOrder = TransactionSortOrder.LATEST,
     val selectedCategory: String? = null,
     val searchQuery: String = "",
-    val userPreferences: UserPreferences = UserPreferences(currencySymbol = "₱", defaultIsCreditCard = false),
+    val userPreferences: UserPreferences = UserPreferences(
+        currencySymbol = "₱",
+        defaultIsCreditCard = false,
+        monthlyBudgetLimit = 5000.0
+    ),
     val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null
 )
