@@ -1,4 +1,4 @@
-package com.karlvcrisostomo.financialmatrix.features.transactions
+package com.karlvcrisostomo.financialmatrix.features.transactions.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

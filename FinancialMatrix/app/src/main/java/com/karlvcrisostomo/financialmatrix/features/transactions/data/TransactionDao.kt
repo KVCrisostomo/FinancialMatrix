@@ -1,10 +1,11 @@
-package com.karlvcrisostomo.financialmatrix.features.transactions
+package com.karlvcrisostomo.financialmatrix.features.transactions.data
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
