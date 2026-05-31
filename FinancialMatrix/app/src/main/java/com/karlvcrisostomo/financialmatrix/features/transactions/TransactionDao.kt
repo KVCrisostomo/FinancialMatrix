@@ -1,4 +1,4 @@
-package com.yourname.financialmatrix.data
+package com.karlvcrisostomo.financialmatrix.features.transactions
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -12,7 +12,7 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
 
     @Delete

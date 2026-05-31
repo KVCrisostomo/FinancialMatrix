@@ -1,4 +1,4 @@
-package com.yourname.financialmatrix.data
+package com.karlvcrisostomo.financialmatrix.core.database
 
 import androidx.room.TypeConverter
 import java.time.LocalDate
