@@ -21,6 +21,7 @@ class TransactionViewModel(
 
     private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
     private val _selectedCategory = MutableStateFlow<String?>(null)
+    private val _searchQuery = MutableStateFlow("")
     
     private val standardCategories = listOf("Food", "Utilities", "Transport", "Entertainment", "Other")
 
@@ -28,13 +29,17 @@ class TransactionViewModel(
     val uiState: StateFlow<TransactionUiState> = combine(
         repository.getAllTransactions(),
         _sortOrder,
-        _selectedCategory
-    ) { transactionList, sortOrder, category ->
-        val filteredList = if (category == null) {
-            transactionList
-        } else {
-            transactionList.filter { it.category == category }
-        }
+        _selectedCategory,
+        _searchQuery
+    ) { transactionList, sortOrder, category, query ->
+        val filteredList = transactionList
+            .filter { transaction ->
+                val matchesCategory = category == null || transaction.category == category
+                val matchesQuery = query.isBlank() || 
+                    transaction.description.contains(query, ignoreCase = true) ||
+                    transaction.category.contains(query, ignoreCase = true)
+                matchesCategory && matchesQuery
+            }
 
         val sortedList = when (sortOrder) {
             TransactionSortOrder.LATEST -> filteredList.sortedByDescending { it.id }
@@ -46,6 +51,7 @@ class TransactionViewModel(
             transactions = sortedList,
             sortOrder = sortOrder,
             selectedCategory = category,
+            searchQuery = query,
             availableCategories = standardCategories,
             isLoading = false
         )
@@ -65,6 +71,10 @@ class TransactionViewModel(
 
     fun updateCategoryFilter(category: String?) {
         _selectedCategory.value = category
+    }
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
     fun addTransaction(transaction: TransactionEntity) {
