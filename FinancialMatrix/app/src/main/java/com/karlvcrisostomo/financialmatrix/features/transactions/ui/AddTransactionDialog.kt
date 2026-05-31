@@ -32,6 +32,8 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionDialog(
+    initialIsCreditCard: Boolean,
+    currencySymbol: String,
     onDismiss: () -> Unit,
     onSave: (TransactionEntity) -> Unit
 ) {
@@ -39,7 +41,7 @@ fun AddTransactionDialog(
     var description by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Food") }
-    var isCreditCard by remember { mutableStateOf(false) }
+    var isCreditCard by remember { mutableStateOf(initialIsCreditCard) }
     
     val categories = listOf("Food", "Utilities", "Transport", "Entertainment", "Other")
     var expanded by remember { mutableStateOf(false) }
@@ -68,7 +70,7 @@ fun AddTransactionDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Amount (₱)") },
+                    label = { Text("Amount ($currencySymbol)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = amountText.isNotEmpty() && !isAmountValid,
                     supportingText = {

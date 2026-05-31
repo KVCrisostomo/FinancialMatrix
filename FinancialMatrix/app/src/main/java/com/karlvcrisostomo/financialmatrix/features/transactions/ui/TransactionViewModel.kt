@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.karlvcrisostomo.financialmatrix.FinancialMatrixApplication
+import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TransactionViewModel(
-    private val repository: TransactionRepository
+    private val repository: TransactionRepository,
+    private val preferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
@@ -30,8 +32,9 @@ class TransactionViewModel(
         repository.getAllTransactions(),
         _sortOrder,
         _selectedCategory,
-        _searchQuery
-    ) { transactionList, sortOrder, category, query ->
+        _searchQuery,
+        preferencesRepository.userPreferencesFlow
+    ) { transactionList, sortOrder, category, query, preferences ->
         val filteredList = transactionList
             .filter { transaction ->
                 val matchesCategory = category == null || transaction.category == category
@@ -52,6 +55,7 @@ class TransactionViewModel(
             sortOrder = sortOrder,
             selectedCategory = category,
             searchQuery = query,
+            userPreferences = preferences,
             availableCategories = standardCategories,
             isLoading = false
         )
@@ -77,6 +81,19 @@ class TransactionViewModel(
         _searchQuery.value = query
     }
 
+    fun toggleDefaultPaymentMethod() {
+        viewModelScope.launch {
+            val current = uiState.value.userPreferences.defaultIsCreditCard
+            preferencesRepository.updateDefaultIsCreditCard(!current)
+        }
+    }
+
+    fun updateCurrencySymbol(symbol: String) {
+        viewModelScope.launch {
+            preferencesRepository.updateCurrencySymbol(symbol)
+        }
+    }
+
     fun addTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             repository.insertTransaction(transaction)
@@ -96,7 +113,10 @@ class TransactionViewModel(
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 // Fetch the Application instance from CreationExtras
                 val application = extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as FinancialMatrixApplication
-                return TransactionViewModel(application.transactionRepository) as T
+                return TransactionViewModel(
+                    application.transactionRepository,
+                    application.userPreferencesRepository
+                ) as T
             }
         }
     }

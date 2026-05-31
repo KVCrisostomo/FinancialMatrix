@@ -1,5 +1,6 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
+import com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 
 enum class TransactionSortOrder(val displayName: String) {
@@ -14,6 +15,7 @@ data class TransactionUiState(
     val sortOrder: TransactionSortOrder = TransactionSortOrder.LATEST,
     val selectedCategory: String? = null,
     val searchQuery: String = "",
+    val userPreferences: UserPreferences = UserPreferences(currencySymbol = "₱", defaultIsCreditCard = false),
     val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null
 )

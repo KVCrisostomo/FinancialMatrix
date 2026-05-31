@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -62,6 +63,8 @@ fun TransactionScreen(
 
     val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
     val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0
+    
+    val currencySymbol = uiState.userPreferences.currencySymbol
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -69,6 +72,13 @@ fun TransactionScreen(
             TopAppBar(
                 title = { Text("Financial Matrix Ledger") },
                 actions = {
+                    IconButton(onClick = { viewModel.toggleDefaultPaymentMethod() }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Toggle Default Payment",
+                            tint = if (uiState.userPreferences.defaultIsCreditCard) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = { exportLauncher.launch("ledger.csv") }) {
                         Icon(Icons.Default.Share, contentDescription = "Export CSV")
                     }
@@ -97,7 +107,7 @@ fun TransactionScreen(
                     Text(text = "Total Outflow", style = MaterialTheme.typography.labelMedium)
                     Text(
                         // 2. Added explicit Locale protection
-                        text = "₱${String.format(Locale.US, "%.2f", totalSpent)}",
+                        text = "$currencySymbol${String.format(Locale.US, "%.2f", totalSpent)}",
                         style = MaterialTheme.typography.headlineLarge,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
@@ -106,11 +116,11 @@ fun TransactionScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = "Cash: ₱${String.format(Locale.US, "%.2f", cashSpent)}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Cash: $currencySymbol${String.format(Locale.US, "%.2f", cashSpent)}", style = MaterialTheme.typography.bodyMedium)
                             Text(text = "${String.format(Locale.US, "%.1f", cashPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(text = "Credit: ₱${String.format(Locale.US, "%.2f", creditSpent)}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Credit: $currencySymbol${String.format(Locale.US, "%.2f", creditSpent)}", style = MaterialTheme.typography.bodyMedium)
                             Text(text = "${String.format(Locale.US, "%.1f", creditPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                         }
                     }
@@ -184,7 +194,7 @@ fun TransactionScreen(
                             .padding(vertical = 4.dp)
                     ) {
                         Text(
-                            text = order.displayName,
+                            text = order.displayName.replace("₱", currencySymbol),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
@@ -217,6 +227,7 @@ fun TransactionScreen(
                         items(uiState.transactions, key = { it.id }) { transaction ->
                             TransactionItem(
                                 transaction = transaction,
+                                currencySymbol = currencySymbol,
                                 onDelete = { viewModel.deleteTransaction(transaction) }
                             )
                         }
@@ -228,6 +239,8 @@ fun TransactionScreen(
 
     if (showAddDialog.value) {
         AddTransactionDialog(
+            initialIsCreditCard = uiState.userPreferences.defaultIsCreditCard,
+            currencySymbol = currencySymbol,
             onDismiss = { showAddDialog.value = false },
             onSave = { newTransaction ->
                 viewModel.addTransaction(newTransaction)
@@ -240,6 +253,7 @@ fun TransactionScreen(
 @Composable
 fun TransactionItem(
     transaction: TransactionEntity,
+    currencySymbol: String,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -274,7 +288,7 @@ fun TransactionItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     // 3. Added explicit Locale protection
-                    text = "₱${String.format(Locale.US, "%.2f", transaction.amount)}",
+                    text = "$currencySymbol${String.format(Locale.US, "%.2f", transaction.amount)}",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(end = 8.dp)
                 )
