@@ -1,5 +1,7 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -11,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
+import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import java.util.Locale
 
@@ -32,6 +37,21 @@ fun TransactionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val showAddDialog = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(uiState.transactions.toCsvString().toByteArray())
+                }
+            } catch (e: Exception) {
+                // Log or handle error - for now we'll rely on SAF behavior
+            }
+        }
+    }
 
     val totalSpent = uiState.transactions.sumOf { it.amount }
     val cashSpent = uiState.transactions.filter { !it.isCreditCard }.sumOf { it.amount }
@@ -46,7 +66,14 @@ fun TransactionScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Financial Matrix Ledger") })
+            TopAppBar(
+                title = { Text("Financial Matrix Ledger") },
+                actions = {
+                    IconButton(onClick = { exportLauncher.launch("ledger.csv") }) {
+                        Icon(Icons.Default.Share, contentDescription = "Export CSV")
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog.value = true }) {
