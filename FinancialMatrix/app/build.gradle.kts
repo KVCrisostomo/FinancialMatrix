@@ -39,7 +39,14 @@ android {
         compose = true
     }
 }
-
+// ✅ The correct AGP 9+ way to add custom/generated source directories
+androidComponents {
+    onVariants { variant ->
+        variant.sources.kotlin?.addStaticSourceDirectory(
+            layout.buildDirectory.dir("generated/ksp/${variant.name}/kotlin").get().asFile.absolutePath
+        )
+    }
+}
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
