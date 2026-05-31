@@ -1,4 +1,4 @@
-package com.KVCrisostomo.financialmatrix
+package com.karlvcrisostomo.financialmatrix
 
 import android.app.Application
 import androidx.room.Room
@@ -8,18 +8,17 @@ import com.karlvcrisostomo.financialmatrix.features.transactions.data.Transactio
 
 class FinancialMatrixApplication : Application() {
 
-    // Thread-safe singleton instantiation of the database instance
     private val database: AppDatabase by lazy {
         Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
             "financial_matrix_database"
         )
-            .fallbackToDestructiveMigration()
+            // Explicitly pass true to indicate all tables should be dropped on schema fallback
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 
-    // Expose the feature repository globally to be consumed by ViewModels
     val transactionRepository: TransactionRepository by lazy {
         OfflineTransactionRepository(database.transactionDao())
     }
