@@ -12,10 +12,10 @@ class FinancialMatrixApplication : Application() {
         Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
-            "financial_matrix_database"
+            "financial_matrix_database",
         )
             // Explicitly pass true to indicate all tables should be dropped on schema fallback
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            .fallbackToDestructiveMigration(true)
             .build()
     }
 
