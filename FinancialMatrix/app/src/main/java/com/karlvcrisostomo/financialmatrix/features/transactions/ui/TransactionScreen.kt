@@ -42,9 +42,18 @@ fun TransactionScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    // 1. State tracker to open/close our modal form
     var showAddDialog by remember { mutableStateOf(false) }
+
+    // 1. KOTLIN COLLECTION MATH: Calculate dashboard metrics on the fly
+    val totalSpent = uiState.transactions.sumOf { it.amount }
+
+    val cashSpent = uiState.transactions
+        .filter { !it.isCreditCard }
+        .sumOf { it.amount }
+
+    val creditSpent = uiState.transactions
+        .filter { it.isCreditCard }
+        .sumOf { it.amount }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -52,9 +61,7 @@ fun TransactionScreen(
             TopAppBar(title = { Text("Financial Matrix Ledger") })
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true } // 2. Open the form on click
-            ) {
+            FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Transaction")
             }
         }
@@ -63,8 +70,43 @@ fun TransactionScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .fillMaxSize()
         ) {
+            // 2. DASHBOARD CARD VIEW
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Total Outflow",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = "₱${String.format("%.2f", totalSpent)}",
+                        style = MaterialTheme.typography.headlineLarge,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Cash: ₱${String.format("%.2f", cashSpent)}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Credit: ₱${String.format("%.2f", creditSpent)}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            // 3. LEDGER LIST VIEW
             when {
                 uiState.isLoading -> {
                     Column(
@@ -89,7 +131,7 @@ fun TransactionScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "No transactions found.\nTap the + button to seed sample data.",
+                            text = "No transactions found.\nTap the + button to seed data.",
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(16.dp)
                         )
@@ -99,7 +141,9 @@ fun TransactionScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            start = 16.dp, end = 16.dp, bottom = 16.dp
+                        )
                     ) {
                         items(uiState.transactions, key = { it.id }) { transaction ->
                             TransactionItem(
@@ -112,12 +156,13 @@ fun TransactionScreen(
             }
         }
     }
+
     if (showAddDialog) {
         AddTransactionDialog(
             onDismiss = { showAddDialog = false },
             onSave = { newTransaction ->
                 viewModel.addTransaction(newTransaction)
-                showAddDialog = false // Close modal after successful write
+                showAddDialog = false
             }
         )
     }
