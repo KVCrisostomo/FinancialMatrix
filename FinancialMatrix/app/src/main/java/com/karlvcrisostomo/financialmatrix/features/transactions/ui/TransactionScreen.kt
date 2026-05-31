@@ -25,6 +25,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -40,6 +43,9 @@ fun TransactionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // 1. State tracker to open/close our modal form
+    var showAddDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -47,30 +53,16 @@ fun TransactionScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    // Instantly generates a random valid transaction to validate the Room loop
-                    val samples = listOf("Starbucks Coffee", "Shell Fuel", "Netflix Subscription", "Grocery Market")
-                    val categories = listOf("Food", "Transport", "Entertainment", "Utilities")
-                    val randomAmount = (Random.nextDouble(50.0, 1500.0) * 100).toLong() / 100.0
-
-                    val sampleTransaction = TransactionEntity(
-                        description = samples.random(),
-                        amount = randomAmount,
-                        date = LocalDate.now(),
-                        category = categories.random(),
-                        isCreditCard = Random.nextBoolean(),
-                        accountName = "Primary Account"
-                    )
-                    viewModel.addTransaction(sampleTransaction)
-                }
+                onClick = { showAddDialog = true } // 2. Open the form on click
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Sample Transaction")
+                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
             }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
+                .fillMaxSize()
                 .fillMaxSize()
         ) {
             when {
@@ -119,6 +111,15 @@ fun TransactionScreen(
                 }
             }
         }
+    }
+    if (showAddDialog) {
+        AddTransactionDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { newTransaction ->
+                viewModel.addTransaction(newTransaction)
+                showAddDialog = false // Close modal after successful write
+            }
+        )
     }
 }
 
