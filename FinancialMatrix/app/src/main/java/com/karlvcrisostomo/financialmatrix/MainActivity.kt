@@ -3,45 +3,33 @@ package com.karlvcrisostomo.financialmatrix
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionScreen
+import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
 import com.karlvcrisostomo.financialmatrix.ui.theme.FinancialMatrixTheme
 
 class MainActivity : ComponentActivity() {
+
+    // Safely inject our ViewModel using the Application layer repository factory configuration
+    private val transactionViewModel: TransactionViewModel by viewModels {
+        TransactionViewModel.Factory
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             FinancialMatrixTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    TransactionScreen(viewModel = transactionViewModel)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    FinancialMatrixTheme {
-        Greeting("Android")
     }
 }
