@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
+import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.AddCreditCardDialog
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDashboard
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.income.ui.AddIncomeDialog
@@ -44,6 +45,7 @@ fun TransactionScreen(
     val ccUiState by ccViewModel.uiState.collectAsState()
     val showAddDialog = remember { mutableStateOf(false) }
     val showAddIncomeDialog = remember { mutableStateOf(false) }
+    val showAddCardDialog = remember { mutableStateOf(false) }
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -219,7 +221,9 @@ fun TransactionScreen(
 
             CreditCardDashboard(
                 uiState = ccUiState,
-                currencySymbol = currencySymbol
+                currencySymbol = currencySymbol,
+                onAddCardClick = { showAddCardDialog.value = true },
+                onDeleteCardClick = { ccViewModel.deleteCard(it) }
             )
 
             // Category Filters
@@ -323,6 +327,7 @@ fun TransactionScreen(
         AddTransactionDialog(
             initialIsCreditCard = uiState.userPreferences.defaultIsCreditCard,
             currencySymbol = currencySymbol,
+            availableCards = ccUiState.cards.map { it.card.name },
             onDismiss = { showAddDialog.value = false },
             onSave = { newTransaction ->
                 viewModel.addTransaction(newTransaction)
@@ -338,6 +343,16 @@ fun TransactionScreen(
             onSave = { newIncome ->
                 viewModel.addIncome(newIncome)
                 showAddIncomeDialog.value = false
+            }
+        )
+    }
+
+    if (showAddCardDialog.value) {
+        AddCreditCardDialog(
+            onDismiss = { showAddCardDialog.value = false },
+            onSave = { newCard ->
+                ccViewModel.addCard(newCard)
+                showAddCardDialog.value = false
             }
         )
     }
