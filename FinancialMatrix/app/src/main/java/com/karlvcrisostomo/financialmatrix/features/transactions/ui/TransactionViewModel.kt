@@ -9,6 +9,8 @@ import androidx.work.WorkManager
 import com.karlvcrisostomo.financialmatrix.FinancialMatrixApplication
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
+import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
+import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,7 @@ import kotlinx.coroutines.launch
 
 class TransactionViewModel(
     private val repository: TransactionRepository,
+    private val incomeRepository: IncomeRepository,
     private val preferencesRepository: UserPreferencesRepository,
     private val workManager: WorkManager
 ) : ViewModel() {
@@ -34,11 +37,19 @@ class TransactionViewModel(
     // Transform the raw database Flow into a cold state stream for the UI
     val uiState: StateFlow<TransactionUiState> = combine(
         repository.getAllTransactions(),
+        incomeRepository.getAllIncome(),
         _sortOrder,
         _selectedCategory,
         _searchQuery,
         preferencesRepository.userPreferencesFlow
-    ) { transactionList, sortOrder, category, query, preferences ->
+    ) { flows ->
+        val transactionList = flows[0] as List<TransactionEntity>
+        val incomeList = flows[1] as List<IncomeEntity>
+        val sortOrder = flows[2] as TransactionSortOrder
+        val category = flows[3] as String?
+        val query = flows[4] as String
+        val preferences = flows[5] as com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
+
         // 1. Apply Filtering
         val filteredList = transactionList
             .filter { transaction ->
@@ -57,7 +68,6 @@ class TransactionViewModel(
         }
 
         // 3. Compute Analytics (Excluding "CC Payment" from spending totals)
-        // Note: Filtered list is used for analytics to show stats for the currently viewed subset
         val activeAnalyticsList = filteredList.filter { it.category != "CC Payment" }
         
         val totalSpent = activeAnalyticsList.sumOf { it.amount }
@@ -67,6 +77,12 @@ class TransactionViewModel(
         val categoryAmounts = activeAnalyticsList.groupBy { it.category }
             .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
+        // 4. Compute Monthly Income
+        val today = java.time.LocalDate.now()
+        val totalIncome = incomeList
+            .filter { it.date.month == today.month && it.date.year == today.year }
+            .sumOf { it.amount }
+
         TransactionUiState(
             transactions = sortedList,
             sortOrder = sortOrder,
@@ -74,6 +90,7 @@ class TransactionViewModel(
             searchQuery = query,
             userPreferences = preferences,
             totalSpent = totalSpent,
+            totalIncome = totalIncome,
             cashSpent = cashSpent,
             creditSpent = creditSpent,
             categoryAmounts = categoryAmounts,
@@ -129,6 +146,12 @@ class TransactionViewModel(
         }
     }
 
+    fun addIncome(income: IncomeEntity) {
+        viewModelScope.launch {
+            incomeRepository.insertIncome(income)
+        }
+    }
+
     private fun triggerBudgetCheck() {
         val workRequest = OneTimeWorkRequestBuilder<BudgetMonitorWorker>().build()
         workManager.enqueue(workRequest)
@@ -149,6 +172,7 @@ class TransactionViewModel(
                 val application = extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as FinancialMatrixApplication
                 return TransactionViewModel(
                     application.transactionRepository,
+                    application.incomeRepository,
                     application.userPreferencesRepository,
                     WorkManager.getInstance(application)
                 ) as T

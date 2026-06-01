@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
+import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionSortOrder
@@ -29,6 +30,7 @@ import kotlin.system.measureTimeMillis
 class TransactionPerformanceTest {
 
     private val repository: TransactionRepository = mockk(relaxed = true)
+    private val incomeRepository: IncomeRepository = mockk(relaxed = true)
     private val preferencesRepository: UserPreferencesRepository = mockk(relaxed = true)
     private val workManager: WorkManager = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
@@ -52,6 +54,7 @@ class TransactionPerformanceTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         every { repository.getAllTransactions() } returns MutableStateFlow(largeDataset)
+        every { incomeRepository.getAllIncome() } returns MutableStateFlow(emptyList())
         every { preferencesRepository.userPreferencesFlow } returns MutableStateFlow(mockPreferences)
     }
 
@@ -62,7 +65,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `search and filter on 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load
@@ -81,7 +84,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `sorting 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load

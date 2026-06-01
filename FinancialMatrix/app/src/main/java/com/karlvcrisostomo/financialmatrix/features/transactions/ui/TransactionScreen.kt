@@ -29,6 +29,7 @@ import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDashboard
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
+import com.karlvcrisostomo.financialmatrix.features.income.ui.AddIncomeDialog
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import java.util.Locale
 
@@ -42,6 +43,7 @@ fun TransactionScreen(
     val uiState by viewModel.uiState.collectAsState()
     val ccUiState by ccViewModel.uiState.collectAsState()
     val showAddDialog = remember { mutableStateOf(false) }
+    val showAddIncomeDialog = remember { mutableStateOf(false) }
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -60,6 +62,7 @@ fun TransactionScreen(
     }
 
     val totalSpent = uiState.totalSpent
+    val totalIncome = uiState.totalIncome
     val cashSpent = uiState.cashSpent
     val creditSpent = uiState.creditSpent
     
@@ -80,6 +83,9 @@ fun TransactionScreen(
             TopAppBar(
                 title = { Text("Financial Matrix Ledger") },
                 actions = {
+                    IconButton(onClick = { showAddIncomeDialog.value = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Income")
+                    }
                     IconButton(onClick = { viewModel.toggleDefaultPaymentMethod() }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -112,15 +118,30 @@ fun TransactionScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Total Outflow", style = MaterialTheme.typography.labelMedium)
-                    Text(
-                        // 2. Added explicit Locale protection
-                        text = "$currencySymbol${String.format(Locale.US, "%.2f", totalSpent)}",
-                        style = MaterialTheme.typography.headlineLarge,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(text = "Total Income", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = "$currencySymbol${String.format(Locale.US, "%.2f", totalIncome)}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Color(0xFF2E7D32) // Green for income
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(text = "Total Outflow", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = "$currencySymbol${String.format(Locale.US, "%.2f", totalSpent)}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
@@ -306,6 +327,17 @@ fun TransactionScreen(
             onSave = { newTransaction ->
                 viewModel.addTransaction(newTransaction)
                 showAddDialog.value = false
+            }
+        )
+    }
+
+    if (showAddIncomeDialog.value) {
+        AddIncomeDialog(
+            currencySymbol = currencySymbol,
+            onDismiss = { showAddIncomeDialog.value = false },
+            onSave = { newIncome ->
+                viewModel.addIncome(newIncome)
+                showAddIncomeDialog.value = false
             }
         )
     }

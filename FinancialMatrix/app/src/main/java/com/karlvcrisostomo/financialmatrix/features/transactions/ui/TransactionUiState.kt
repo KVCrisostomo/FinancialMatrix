@@ -21,6 +21,7 @@ data class TransactionUiState(
         monthlyBudgetLimit = 5000.0
     ),
     val totalSpent: Double = 0.0,
+    val totalIncome: Double = 0.0,
     val cashSpent: Double = 0.0,
     val creditSpent: Double = 0.0,
     val categoryAmounts: Map<String, Double> = emptyMap(),

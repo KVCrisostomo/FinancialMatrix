@@ -14,6 +14,7 @@ if ($LASTEXITCODE -ne 0) {
 # 2. Run Data Layer Tests
 Write-Host "Running Data Layer Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.creditcards.data.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.income.data.*
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Data Layer Tests Failed!" -ForegroundColor Red
     exit 1
