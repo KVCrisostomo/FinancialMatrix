@@ -35,7 +35,8 @@ class TransactionViewModelTest {
 
     private val mockTransactions = listOf(
         TransactionEntity(1, "Jollibee", 200.0, LocalDate.now(), "Food", true, "Primary"),
-        TransactionEntity(2, "Electric Bill", 1500.0, LocalDate.now(), "Utilities", false, "Primary")
+        TransactionEntity(2, "Electric Bill", 1500.0, LocalDate.now(), "Utilities", false, "Primary"),
+        TransactionEntity(3, "Credit Card Payment", 1000.0, LocalDate.now(), "CC Payment", false, "Primary")
     )
 
     private val mockPreferences = UserPreferences("₱", false, 5000.0)
@@ -53,20 +54,18 @@ class TransactionViewModelTest {
     }
 
     @Test
-    fun `initial uiState is correct`() = runTest {
+    fun `initial uiState is correct and excludes CC Payment from totals`() = runTest {
         val viewModel = TransactionViewModel(repository, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            // StateFlow emits initial value immediately
             val firstEmission = awaitItem()
-            // In TransactionViewModel, initialValue is TransactionUiState(isLoading = true)
-            // But since flows emit immediately in setup, we might get the loaded state
-            if (firstEmission.isLoading) {
-                val loadedState = awaitItem()
-                assertEquals(mockTransactions.size, loadedState.transactions.size)
-            } else {
-                assertEquals(mockTransactions.size, firstEmission.transactions.size)
-            }
+            val state = if (firstEmission.isLoading) awaitItem() else firstEmission
+            
+            assertEquals(mockTransactions.size, state.transactions.size)
+            // 200 (Food) + 1500 (Utilities) = 1700. CC Payment (1000) should be excluded.
+            assertEquals(1700.0, state.totalSpent, 0.0)
+            assertEquals("₱", state.userPreferences.currencySymbol)
+            assertEquals(false, state.userPreferences.defaultIsCreditCard)
         }
     }
 
@@ -111,7 +110,8 @@ class TransactionViewModelTest {
             val sortedState = awaitItem()
             
             assertEquals(1500.0, sortedState.transactions[0].amount, 0.0)
-            assertEquals(200.0, sortedState.transactions[1].amount, 0.0)
+            assertEquals(1000.0, sortedState.transactions[1].amount, 0.0)
+            assertEquals(200.0, sortedState.transactions[2].amount, 0.0)
         }
     }
 

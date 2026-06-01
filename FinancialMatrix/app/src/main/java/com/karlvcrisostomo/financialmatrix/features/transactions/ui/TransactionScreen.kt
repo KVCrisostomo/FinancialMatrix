@@ -55,12 +55,11 @@ fun TransactionScreen(
         }
     }
 
-    val totalSpent = uiState.transactions.sumOf { it.amount }
-    val cashSpent = uiState.transactions.filter { !it.isCreditCard }.sumOf { it.amount }
-    val creditSpent = uiState.transactions.filter { it.isCreditCard }.sumOf { it.amount }
+    val totalSpent = uiState.totalSpent
+    val cashSpent = uiState.cashSpent
+    val creditSpent = uiState.creditSpent
     
-    val categoryAmounts = uiState.transactions.groupBy { it.category }
-        .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
+    val categoryAmounts = uiState.categoryAmounts
 
     val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
     val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0

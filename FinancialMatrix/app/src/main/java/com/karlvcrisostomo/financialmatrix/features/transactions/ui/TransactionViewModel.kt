@@ -29,7 +29,7 @@ class TransactionViewModel(
     private val _selectedCategory = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
     
-    private val standardCategories = listOf("Food", "Utilities", "Transport", "Entertainment", "Other")
+    private val standardCategories = listOf("Food", "Utilities", "Transport", "Entertainment", "CC Payment", "Other")
 
     // Transform the raw database Flow into a cold state stream for the UI
     val uiState: StateFlow<TransactionUiState> = combine(
@@ -39,6 +39,7 @@ class TransactionViewModel(
         _searchQuery,
         preferencesRepository.userPreferencesFlow
     ) { transactionList, sortOrder, category, query, preferences ->
+        // 1. Apply Filtering
         val filteredList = transactionList
             .filter { transaction ->
                 val matchesCategory = category == null || transaction.category == category
@@ -48,11 +49,23 @@ class TransactionViewModel(
                 matchesCategory && matchesQuery
             }
 
+        // 2. Apply Sorting
         val sortedList = when (sortOrder) {
             TransactionSortOrder.LATEST -> filteredList.sortedByDescending { it.id }
             TransactionSortOrder.HIGHEST_AMOUNT -> filteredList.sortedByDescending { it.amount }
             TransactionSortOrder.LOWEST_AMOUNT -> filteredList.sortedBy { it.amount }
         }
+
+        // 3. Compute Analytics (Excluding "CC Payment" from spending totals)
+        // Note: Filtered list is used for analytics to show stats for the currently viewed subset
+        val activeAnalyticsList = filteredList.filter { it.category != "CC Payment" }
+        
+        val totalSpent = activeAnalyticsList.sumOf { it.amount }
+        val cashSpent = activeAnalyticsList.filter { !it.isCreditCard }.sumOf { it.amount }
+        val creditSpent = activeAnalyticsList.filter { it.isCreditCard }.sumOf { it.amount }
+        
+        val categoryAmounts = activeAnalyticsList.groupBy { it.category }
+            .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
         TransactionUiState(
             transactions = sortedList,
@@ -60,6 +73,10 @@ class TransactionViewModel(
             selectedCategory = category,
             searchQuery = query,
             userPreferences = preferences,
+            totalSpent = totalSpent,
+            cashSpent = cashSpent,
+            creditSpent = creditSpent,
+            categoryAmounts = categoryAmounts,
             availableCategories = standardCategories,
             isLoading = false
         )
