@@ -10,7 +10,7 @@ import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionDao
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 
-@Database(entities = [TransactionEntity::class, CreditCardEntity::class, IncomeEntity::class], version = 1, exportSchema = false)
+@Database(entities = [TransactionEntity::class, CreditCardEntity::class, IncomeEntity::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
