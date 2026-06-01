@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import com.karlvcrisostomo.financialmatrix.core.security.BiometricAuthenticator
+import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionScreen
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
 import com.karlvcrisostomo.financialmatrix.ui.theme.FinancialMatrixTheme
@@ -25,6 +26,10 @@ class MainActivity : FragmentActivity() {
 
     private val transactionViewModel: TransactionViewModel by viewModels {
         TransactionViewModel.Factory
+    }
+
+    private val creditCardViewModel: CreditCardViewModel by viewModels {
+        CreditCardViewModel.Factory
     }
 
     private val biometricAuthenticator by lazy {
@@ -46,7 +51,10 @@ class MainActivity : FragmentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     if (isAuthenticated) {
-                        TransactionScreen(viewModel = transactionViewModel)
+                        TransactionScreen(
+                            viewModel = transactionViewModel,
+                            ccViewModel = creditCardViewModel
+                        )
                     } else {
                         Box(
                             modifier = Modifier.fillMaxSize(),

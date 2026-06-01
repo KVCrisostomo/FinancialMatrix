@@ -22,6 +22,7 @@ if ($LASTEXITCODE -ne 0) {
 # 3. Run ViewModel Tests
 Write-Host "Running ViewModel Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.ui.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.creditcards.ui.*
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ViewModel Tests Failed!" -ForegroundColor Red
     exit 1

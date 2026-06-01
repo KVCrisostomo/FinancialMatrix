@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
+import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDashboard
+import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import java.util.Locale
 
@@ -34,9 +36,11 @@ import java.util.Locale
 @Composable
 fun TransactionScreen(
     viewModel: TransactionViewModel,
+    ccViewModel: CreditCardViewModel,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val ccUiState by ccViewModel.uiState.collectAsState()
     val showAddDialog = remember { mutableStateOf(false) }
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -191,6 +195,11 @@ fun TransactionScreen(
                     }
                 }
             }
+
+            CreditCardDashboard(
+                uiState = ccUiState,
+                currencySymbol = currencySymbol
+            )
 
             // Category Filters
             Row(
