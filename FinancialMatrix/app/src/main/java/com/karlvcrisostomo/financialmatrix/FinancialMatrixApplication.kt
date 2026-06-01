@@ -13,6 +13,8 @@ import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.database.AppDatabase
 import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
 import java.util.concurrent.TimeUnit
+import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardRepository
+import com.karlvcrisostomo.financialmatrix.features.creditcards.data.OfflineCreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 
@@ -34,6 +36,10 @@ class FinancialMatrixApplication : Application() {
 
     val transactionRepository: TransactionRepository by lazy {
         OfflineTransactionRepository(database.transactionDao())
+    }
+
+    val creditCardRepository: CreditCardRepository by lazy {
+        OfflineCreditCardRepository(database.creditCardDao())
     }
 
     val userPreferencesRepository: UserPreferencesRepository by lazy {
