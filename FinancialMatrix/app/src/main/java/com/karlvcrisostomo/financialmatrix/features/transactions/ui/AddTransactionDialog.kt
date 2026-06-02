@@ -34,6 +34,7 @@ import java.time.LocalDate
 fun AddTransactionDialog(
     initialIsCreditCard: Boolean,
     currencySymbol: String,
+    availableCards: List<String>,
     onDismiss: () -> Unit,
     onSave: (TransactionEntity) -> Unit
 ) {
@@ -42,9 +43,11 @@ fun AddTransactionDialog(
     var amountText by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Food") }
     var isCreditCard by remember { mutableStateOf(initialIsCreditCard) }
+    var selectedCardName by remember { mutableStateOf(if (availableCards.isNotEmpty()) availableCards[0] else "Primary") }
     
-    val categories = listOf("Food", "Utilities", "Transport", "Entertainment", "Other")
-    var expanded by remember { mutableStateOf(false) }
+    val categories = listOf("Food", "Utilities", "Transport", "Entertainment", "CC Payment", "Other")
+    var categoryExpanded by remember { mutableStateOf(false) }
+    var cardExpanded by remember { mutableStateOf(false) }
 
     // Derived states for validation
     val isAmountValid = remember(amountText) {
@@ -82,8 +85,8 @@ fun AddTransactionDialog(
                 )
 
                 ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = !categoryExpanded },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
@@ -91,21 +94,21 @@ fun AddTransactionDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Category") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                         modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
                     )
 
                     ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        expanded = categoryExpanded,
+                        onDismissRequest = { categoryExpanded = false }
                     ) {
                         categories.forEach { selectionOption ->
                             DropdownMenuItem(
                                 text = { Text(selectionOption) },
                                 onClick = {
                                     category = selectionOption
-                                    expanded = false
+                                    categoryExpanded = false
                                 },
                                 contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                             )
@@ -123,6 +126,40 @@ fun AddTransactionDialog(
                     )
                     Text(text = "Paid with Credit Card", modifier = Modifier.padding(start = 8.dp))
                 }
+
+                if (isCreditCard && availableCards.isNotEmpty()) {
+                    ExposedDropdownMenuBox(
+                        expanded = cardExpanded,
+                        onExpandedChange = { cardExpanded = !cardExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCardName,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Select Card") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cardExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = cardExpanded,
+                            onDismissRequest = { cardExpanded = false }
+                        ) {
+                            availableCards.forEach { cardName ->
+                                DropdownMenuItem(
+                                    text = { Text(cardName) },
+                                    onClick = {
+                                        selectedCardName = cardName
+                                        cardExpanded = false
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -135,7 +172,7 @@ fun AddTransactionDialog(
                         date = LocalDate.now(),
                         category = category,
                         isCreditCard = isCreditCard,
-                        accountName = "Primary"
+                        accountName = if (isCreditCard) selectedCardName else "Primary"
                     )
                     onSave(newTransaction)
                 },
