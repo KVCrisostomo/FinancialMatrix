@@ -94,6 +94,18 @@ class CreditCardViewModelTest {
     }
 
     @Test
+    fun `addCard with existing ID updates card in repository`() = runTest {
+        val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
+        val updatedCard = mockCards[0].copy(creditLimit = 60000.0)
+
+        viewModel.addCard(updatedCard)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Room's REPLACE strategy handles the update if IDs match
+        coVerify { cardRepository.insertCard(updatedCard) }
+    }
+
+    @Test
     fun `deleteCard calls repository`() = runTest {
         val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
         val cardToDelete = mockCards[0]

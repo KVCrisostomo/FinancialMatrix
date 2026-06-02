@@ -17,12 +17,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
-import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.AddCreditCardDialog
+import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
+import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDialog
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardScreen
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.income.ui.AddIncomeDialog
 import com.karlvcrisostomo.financialmatrix.features.income.ui.IncomeScreen
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 sealed class Screen(val route: String, val title: String) {
     object Expenses : Screen("expenses", "Expenses Ledger")
@@ -49,6 +52,7 @@ fun TransactionScreen(
     val showAddDialog = remember { mutableStateOf(false) }
     val showAddIncomeDialog = remember { mutableStateOf(false) }
     val showAddCardDialog = remember { mutableStateOf(false) }
+    val editingCard = remember { mutableStateOf<CreditCardEntity?>(null) }
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -187,7 +191,8 @@ fun TransactionScreen(
                     CreditCardScreen(
                         viewModel = ccViewModel,
                         transactionViewModel = viewModel,
-                        onAddCardClick = { showAddCardDialog.value = true }
+                        onAddCardClick = { showAddCardDialog.value = true },
+                        onEditCardClick = { editingCard.value = it }
                     )
                 }
                 composable(Screen.Settings.route) {
@@ -237,11 +242,22 @@ fun TransactionScreen(
     }
 
     if (showAddCardDialog.value) {
-        AddCreditCardDialog(
+        CreditCardDialog(
             onDismiss = { showAddCardDialog.value = false },
             onSave = { newCard ->
                 ccViewModel.addCard(newCard)
                 showAddCardDialog.value = false
+            }
+        )
+    }
+
+    if (editingCard.value != null) {
+        CreditCardDialog(
+            card = editingCard.value,
+            onDismiss = { editingCard.value = null },
+            onSave = { updatedCard ->
+                ccViewModel.addCard(updatedCard)
+                editingCard.value = null
             }
         )
     }

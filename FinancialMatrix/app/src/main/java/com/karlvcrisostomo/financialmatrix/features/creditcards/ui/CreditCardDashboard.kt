@@ -1,17 +1,36 @@
 package com.karlvcrisostomo.financialmatrix.features.creditcards.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
@@ -23,6 +42,7 @@ fun CreditCardDashboard(
     uiState: CreditCardUiState,
     currencySymbol: String,
     onAddCardClick: () -> Unit,
+    onEditCardClick: (CreditCardEntity) -> Unit,
     onDeleteCardClick: (CreditCardEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -71,6 +91,7 @@ fun CreditCardDashboard(
                     CreditCardSummaryCard(
                         stats = stats, 
                         currencySymbol = currencySymbol,
+                        onEdit = { onEditCardClick(stats.card) },
                         onDelete = { onDeleteCardClick(stats.card) }
                     )
                 }
@@ -83,6 +104,7 @@ fun CreditCardDashboard(
 fun CreditCardSummaryCard(
     stats: CreditCardStats,
     currencySymbol: String,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -114,6 +136,17 @@ fun CreditCardSummaryCard(
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit, 
+                            contentDescription = "Edit Card",
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                     IconButton(
                         onClick = onDelete,
                         modifier = Modifier.size(24.dp)

@@ -1,12 +1,12 @@
 package com.karlvcrisostomo.financialmatrix.features.creditcards.ui
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
 
 @Composable
@@ -14,6 +14,7 @@ fun CreditCardScreen(
     viewModel: CreditCardViewModel,
     transactionViewModel: TransactionViewModel,
     onAddCardClick: () -> Unit,
+    onEditCardClick: (CreditCardEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -25,6 +26,7 @@ fun CreditCardScreen(
             uiState = uiState,
             currencySymbol = currencySymbol,
             onAddCardClick = onAddCardClick,
+            onEditCardClick = onEditCardClick,
             onDeleteCardClick = { viewModel.deleteCard(it) },
             modifier = Modifier.weight(1f)
         )
