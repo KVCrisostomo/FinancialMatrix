@@ -6,6 +6,8 @@ Write-Host "Starting Build Certification..." -ForegroundColor Cyan
 # 1. Run Core Unit Tests
 Write-Host "Running Core Unit Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.core.util.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.domain.util.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.worker.*
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Core Unit Tests Failed!" -ForegroundColor Red
     exit 1

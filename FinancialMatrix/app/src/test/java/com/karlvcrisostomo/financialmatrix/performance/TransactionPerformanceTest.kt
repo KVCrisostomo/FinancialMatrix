@@ -72,7 +72,8 @@ class TransactionPerformanceTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem() // Initial load
+            awaitItem() // Initial loading
+            awaitItem() // Initial success
 
             val executionTime = measureTimeMillis {
                 viewModel.updateSearchQuery("Transaction 500")
@@ -91,7 +92,8 @@ class TransactionPerformanceTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem() // Initial load
+            awaitItem() // Initial loading
+            awaitItem() // Initial success
 
             val executionTime = measureTimeMillis {
                 viewModel.updateSortOrder(TransactionSortOrder.HIGHEST_AMOUNT)

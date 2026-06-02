@@ -70,8 +70,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            val firstEmission = awaitItem()
-            val state = if (firstEmission.isLoading) awaitItem() else firstEmission
+            // Success state
+            val state = awaitItem()
             
             assertEquals(mockTransactions.size, state.transactions.size)
             // 200 (Food) + 1500 (Utilities) = 1700. CC Payment (1000) should be excluded.
@@ -80,6 +80,8 @@ class TransactionViewModelTest {
             assertEquals(6200.0, state.totalIncome, 0.0)
             assertEquals("₱", state.userPreferences.currencySymbol)
             assertEquals(false, state.userPreferences.defaultIsCreditCard)
+            
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -88,8 +90,7 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            val firstEmission = awaitItem()
-            val state = if (firstEmission.isLoading) awaitItem() else firstEmission
+            val state = awaitItem()
             
             // Total Income = 6200.0
             // Total Spent (excluding CC Payment) = 1700.0
@@ -98,6 +99,8 @@ class TransactionViewModelTest {
             
             // Savings Rate = (4500 / 6200) * 100 approx 72.58%
             assertEquals(72.58, state.savingsRate, 0.01)
+            
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -106,13 +109,15 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem() // Initial load
+            awaitItem()
             
             viewModel.updateSearchQuery("Electric")
             val filteredState = awaitItem()
             
             assertEquals(1, filteredState.transactions.size)
             assertEquals("Electric Bill", filteredState.transactions[0].description)
+            
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -121,13 +126,15 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem() // Initial load
+            awaitItem()
             
             viewModel.updateCategoryFilter("Food")
             val filteredState = awaitItem()
             
             assertEquals(1, filteredState.transactions.size)
             assertEquals("Food", filteredState.transactions[0].category)
+            
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -136,7 +143,7 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem() // Initial load
+            awaitItem()
             
             viewModel.updateSortOrder(TransactionSortOrder.HIGHEST_AMOUNT)
             val sortedState = awaitItem()
@@ -144,6 +151,8 @@ class TransactionViewModelTest {
             assertEquals(1500.0, sortedState.transactions[0].amount, 0.0)
             assertEquals(1000.0, sortedState.transactions[1].amount, 0.0)
             assertEquals(200.0, sortedState.transactions[2].amount, 0.0)
+            
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -152,12 +161,19 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
         val newTransaction = TransactionEntity(3, "Coffee", 120.0, LocalDate.now(), "Food", false, "Primary")
 
-        viewModel.addTransaction(newTransaction)
-        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.uiState.test {
+            awaitItem() // Skip loading
+            awaitItem() // Skip initial success
 
-        coVerify { repository.insertTransaction(newTransaction) }
-        // Verify workManager interaction
-        coVerify { workManager.enqueue(any<WorkRequest>()) }
+            viewModel.addTransaction(newTransaction)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { repository.insertTransaction(newTransaction) }
+            // Verify workManager interaction
+            coVerify { workManager.enqueue(any<WorkRequest>()) }
+            
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -165,10 +181,16 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
         val newIncome = IncomeEntity(4, "Bonus", 500.0, LocalDate.now())
 
-        viewModel.addIncome(newIncome)
-        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.uiState.test {
+            awaitItem()
+            awaitItem()
+            
+            viewModel.addIncome(newIncome)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { incomeRepository.insertIncome(newIncome) }
+            coVerify { incomeRepository.insertIncome(newIncome) }
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -176,9 +198,15 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
         val transactionToDelete = mockTransactions[0]
 
-        viewModel.deleteTransaction(transactionToDelete)
-        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.uiState.test {
+            awaitItem()
+            awaitItem()
+            
+            viewModel.deleteTransaction(transactionToDelete)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { repository.deleteTransaction(transactionToDelete) }
+            coVerify { repository.deleteTransaction(transactionToDelete) }
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }
