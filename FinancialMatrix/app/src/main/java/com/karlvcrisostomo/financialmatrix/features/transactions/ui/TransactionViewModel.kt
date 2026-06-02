@@ -15,12 +15,14 @@ import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringT
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
+import com.karlvcrisostomo.financialmatrix.domain.model.TransactionCategory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -36,7 +38,7 @@ class TransactionViewModel(
     private val _selectedCategory = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
     
-    private val standardCategories = listOf("Food", "Utilities", "Transport", "Entertainment", "CC Payment", "Other")
+    private val standardCategories = TransactionCategory.getAllStandard().map { it.displayName }
 
     val recurringTransactions: StateFlow<List<RecurringTransactionEntity>> = 
         recurringRepository.getAllRecurringTransactions()
@@ -75,10 +77,12 @@ class TransactionViewModel(
             TransactionSortOrder.LOWEST_AMOUNT -> filteredList.sortedBy { it.amount }
         }
 
-        // 3. Compute Analytics (Excluding "CC Payment" from spending totals)
+        // 3. Compute Analytics (Excluding internal transfers like CC Payment from spending totals)
         val today = java.time.LocalDate.now()
         val monthlyTransactions = transactionList.filter { 
-            it.date.month == today.month && it.date.year == today.year && it.category != "CC Payment" 
+            it.date.month == today.month && 
+            it.date.year == today.year && 
+            !TransactionCategory.from(it.category).isInternalTransfer()
         }
         
         val totalSpent = monthlyTransactions.sumOf { it.amount }
@@ -123,6 +127,7 @@ class TransactionViewModel(
         started = SharingStarted.WhileSubscribed(5000), // Grace period for configuration changes (like screen rotations)
         initialValue = TransactionUiState(isLoading = true)
     )
+
 
     fun updateSortOrder(order: TransactionSortOrder) {
         _sortOrder.value = order
