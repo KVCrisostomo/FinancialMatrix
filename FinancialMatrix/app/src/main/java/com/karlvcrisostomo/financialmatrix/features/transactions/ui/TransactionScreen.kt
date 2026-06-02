@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -53,6 +54,7 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardScr
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.income.ui.AddIncomeDialog
 import com.karlvcrisostomo.financialmatrix.features.income.ui.IncomeScreen
+import com.karlvcrisostomo.financialmatrix.features.transactions.ui.RecurringManagementDialog
 import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String, val title: String) {
@@ -80,6 +82,7 @@ fun TransactionScreen(
     val showAddDialog = remember { mutableStateOf(false) }
     val showAddIncomeDialog = remember { mutableStateOf(false) }
     val showAddCardDialog = remember { mutableStateOf(false) }
+    val showRecurringDialog = remember { mutableStateOf(false) }
     val editingCard = remember { mutableStateOf<CreditCardEntity?>(null) }
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -239,10 +242,26 @@ fun TransactionScreen(
                         Button(onClick = { showBudgetDialog.value = true }) {
                             Text("Set Budget (Current: $currencySymbol${uiState.userPreferences.monthlyBudgetLimit})")
                         }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text("Ledger Automation", style = MaterialTheme.typography.titleMedium)
+                        Button(
+                            onClick = { showRecurringDialog.value = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Manage Recurring Transactions")
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showRecurringDialog.value) {
+        RecurringManagementDialog(
+            viewModel = viewModel,
+            ccViewModel = ccViewModel,
+            onDismiss = { showRecurringDialog.value = false }
+        )
     }
 
     if (showAddDialog.value) {

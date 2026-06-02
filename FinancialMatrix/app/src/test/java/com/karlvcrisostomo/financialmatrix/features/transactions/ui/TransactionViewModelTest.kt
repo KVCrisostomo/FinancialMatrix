@@ -1,16 +1,15 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import app.cash.turbine.test
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
-import androidx.work.WorkRequest
-import androidx.work.WorkManager
-import androidx.work.Operation
-import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionSortOrder
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -32,6 +31,7 @@ class TransactionViewModelTest {
 
     private val repository: TransactionRepository = mockk(relaxed = true)
     private val incomeRepository: IncomeRepository = mockk(relaxed = true)
+    private val recurringRepo: RecurringTransactionRepository = mockk(relaxed = true)
     private val preferencesRepository: UserPreferencesRepository = mockk(relaxed = true)
     private val workManager: WorkManager = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
@@ -56,6 +56,7 @@ class TransactionViewModelTest {
         Dispatchers.setMain(testDispatcher)
         every { repository.getAllTransactions() } returns flowOf(mockTransactions)
         every { incomeRepository.getAllIncome() } returns flowOf(mockIncome)
+        every { recurringRepo.getAllRecurringTransactions() } returns flowOf(emptyList())
         every { preferencesRepository.userPreferencesFlow } returns flowOf(mockPreferences)
     }
 
@@ -66,7 +67,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `initial uiState is correct and excludes CC Payment from totals and includes monthly income`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             val firstEmission = awaitItem()
@@ -84,7 +85,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `initial uiState computes Savings KPIs correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             val firstEmission = awaitItem()
@@ -102,7 +103,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `updateSearchQuery filters transactions correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load
@@ -117,7 +118,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `updateCategoryFilter filters transactions correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load
@@ -132,7 +133,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `updateSortOrder reorders transactions correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load
@@ -148,7 +149,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `addTransaction calls repository and triggers budget check`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
         val newTransaction = TransactionEntity(3, "Coffee", 120.0, LocalDate.now(), "Food", false, "Primary")
 
         viewModel.addTransaction(newTransaction)
@@ -161,7 +162,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `addIncome calls repository`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
         val newIncome = IncomeEntity(4, "Bonus", 500.0, LocalDate.now())
 
         viewModel.addIncome(newIncome)
@@ -172,7 +173,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `deleteTransaction calls repository`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
         val transactionToDelete = mockTransactions[0]
 
         viewModel.deleteTransaction(transactionToDelete)

@@ -11,6 +11,8 @@ import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionEntity
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,12 +20,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TransactionViewModel(
     private val repository: TransactionRepository,
     private val incomeRepository: IncomeRepository,
+    private val recurringRepository: RecurringTransactionRepository,
     private val preferencesRepository: UserPreferencesRepository,
     private val workManager: WorkManager
 ) : ViewModel() {
@@ -33,6 +37,10 @@ class TransactionViewModel(
     private val _searchQuery = MutableStateFlow("")
     
     private val standardCategories = listOf("Food", "Utilities", "Transport", "Entertainment", "CC Payment", "Other")
+
+    val recurringTransactions: StateFlow<List<RecurringTransactionEntity>> = 
+        recurringRepository.getAllRecurringTransactions()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Transform the raw database Flow into a cold state stream for the UI
     val uiState: StateFlow<TransactionUiState> = combine(
@@ -167,6 +175,18 @@ class TransactionViewModel(
         }
     }
 
+    fun addRecurringTransaction(recurring: RecurringTransactionEntity) {
+        viewModelScope.launch {
+            recurringRepository.insertRecurringTransaction(recurring)
+        }
+    }
+
+    fun deleteRecurringTransaction(recurring: RecurringTransactionEntity) {
+        viewModelScope.launch {
+            recurringRepository.deleteRecurringTransaction(recurring)
+        }
+    }
+
     private fun triggerBudgetCheck() {
         val workRequest = OneTimeWorkRequestBuilder<BudgetMonitorWorker>().build()
         workManager.enqueue(workRequest)
@@ -188,6 +208,7 @@ class TransactionViewModel(
                 return TransactionViewModel(
                     application.transactionRepository,
                     application.incomeRepository,
+                    application.recurringTransactionRepository,
                     application.userPreferencesRepository,
                     WorkManager.getInstance(application)
                 ) as T

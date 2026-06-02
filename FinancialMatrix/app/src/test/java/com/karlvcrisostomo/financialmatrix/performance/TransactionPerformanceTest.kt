@@ -1,10 +1,12 @@
 package com.karlvcrisostomo.financialmatrix.performance
 
+import androidx.work.WorkManager
 import app.cash.turbine.test
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionSortOrder
@@ -14,6 +16,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -23,7 +26,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
-import androidx.work.WorkManager
 import kotlin.system.measureTimeMillis
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -31,6 +33,7 @@ class TransactionPerformanceTest {
 
     private val repository: TransactionRepository = mockk(relaxed = true)
     private val incomeRepository: IncomeRepository = mockk(relaxed = true)
+    private val recurringRepo: RecurringTransactionRepository = mockk(relaxed = true)
     private val preferencesRepository: UserPreferencesRepository = mockk(relaxed = true)
     private val workManager: WorkManager = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
@@ -55,6 +58,7 @@ class TransactionPerformanceTest {
         Dispatchers.setMain(testDispatcher)
         every { repository.getAllTransactions() } returns MutableStateFlow(largeDataset)
         every { incomeRepository.getAllIncome() } returns MutableStateFlow(emptyList())
+        every { recurringRepo.getAllRecurringTransactions() } returns flowOf(emptyList())
         every { preferencesRepository.userPreferencesFlow } returns MutableStateFlow(mockPreferences)
     }
 
@@ -65,7 +69,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `search and filter on 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load
@@ -84,7 +88,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `sorting 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
             awaitItem() // Initial load

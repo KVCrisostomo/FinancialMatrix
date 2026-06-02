@@ -7,13 +7,16 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardD
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeDao
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionDao
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionDao
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 
-@Database(entities = [TransactionEntity::class, CreditCardEntity::class, IncomeEntity::class], version = 2, exportSchema = false)
+@Database(entities = [TransactionEntity::class, CreditCardEntity::class, IncomeEntity::class, RecurringTransactionEntity::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun creditCardDao(): CreditCardDao
     abstract fun incomeDao(): IncomeDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
 }

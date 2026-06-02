@@ -12,12 +12,15 @@ import androidx.work.WorkManager
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.database.AppDatabase
 import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
+import com.karlvcrisostomo.financialmatrix.features.transactions.worker.RecurringTransactionWorker
 import java.util.concurrent.TimeUnit
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.OfflineCreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.income.data.OfflineIncomeRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineRecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineTransactionRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 
 private const val USER_PREFERENCES_NAME = "user_preferences"
@@ -48,6 +51,10 @@ class FinancialMatrixApplication : Application() {
         OfflineIncomeRepository(database.incomeDao())
     }
 
+    val recurringTransactionRepository: RecurringTransactionRepository by lazy {
+        OfflineRecurringTransactionRepository(database.recurringTransactionDao())
+    }
+
     val userPreferencesRepository: UserPreferencesRepository by lazy {
         UserPreferencesRepository(dataStore)
     }
@@ -55,6 +62,7 @@ class FinancialMatrixApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         setupBudgetMonitor()
+        setupRecurringTransactions()
     }
 
     private fun setupBudgetMonitor() {
@@ -68,6 +76,22 @@ class FinancialMatrixApplication : Application() {
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "BudgetMonitorWork",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+    }
+
+    private fun setupRecurringTransactions() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+            .build()
+
+        val workRequest = PeriodicWorkRequestBuilder<RecurringTransactionWorker>(24, TimeUnit.HOURS)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "RecurringTransactionWork",
             ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
