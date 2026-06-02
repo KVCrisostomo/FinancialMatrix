@@ -9,9 +9,12 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardE
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import kotlinx.coroutines.flow.SharingStarted
+import com.karlvcrisostomo.financialmatrix.domain.util.StatementCycleCalculator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -47,19 +50,10 @@ class CreditCardViewModel(
         transactions: List<com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity>,
         today: LocalDate
     ): CreditCardStats {
-        // Calculate the window for the PREVIOUS statement (the one currently due or recently paid)
-        val billingDay = card.billingDay
-        
-        // Find the most recent billing date that is <= today
-        var currentBillingDate = today.withDayOfMonth(
-            if (billingDay <= today.lengthOfMonth()) billingDay else today.lengthOfMonth()
+        val (statementWindowStart, statementWindowEnd) = StatementCycleCalculator.calculatePreviousStatementWindow(
+            card.billingDay,
+            today
         )
-        if (currentBillingDate.isAfter(today)) {
-            currentBillingDate = currentBillingDate.minusMonths(1)
-        }
-
-        val statementWindowEnd = currentBillingDate
-        val statementWindowStart = currentBillingDate.minusMonths(1).plusDays(1)
 
         // Filter transactions for this specific card
         // Note: Currently TransactionEntity has accountName, we might need to match by card name
