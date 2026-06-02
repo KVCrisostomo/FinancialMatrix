@@ -14,9 +14,11 @@ class RecurringTransactionWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        val app = applicationContext as FinancialMatrixApplication
-        val recurringRepo = app.recurringTransactionRepository
-        val transRepo = app.transactionRepository
+        val app = applicationContext as? FinancialMatrixApplication
+        val recurringRepo = app?.recurringTransactionRepository
+        val transRepo = app?.transactionRepository
+
+        if (recurringRepo == null || transRepo == null) return Result.success()
         
         val today = LocalDate.now()
         val dueTransactions = recurringRepo.getDueRecurringTransactions(today)
