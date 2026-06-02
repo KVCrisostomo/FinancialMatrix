@@ -48,6 +48,12 @@ fun ExpensesScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
+        SavingsDashboard(
+            netSavings = uiState.netSavings,
+            savingsRate = uiState.savingsRate,
+            currencySymbol = currencySymbol
+        )
+
         // Dashboard Card View
         Card(
             modifier = Modifier

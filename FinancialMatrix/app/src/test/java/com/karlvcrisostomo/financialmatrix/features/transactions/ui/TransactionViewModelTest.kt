@@ -83,6 +83,24 @@ class TransactionViewModelTest {
     }
 
     @Test
+    fun `initial uiState computes Savings KPIs correctly`() = runTest {
+        val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
+
+        viewModel.uiState.test {
+            val firstEmission = awaitItem()
+            val state = if (firstEmission.isLoading) awaitItem() else firstEmission
+            
+            // Total Income = 6200.0
+            // Total Spent (excluding CC Payment) = 1700.0
+            // Net Savings = 6200 - 1700 = 4500.0
+            assertEquals(4500.0, state.netSavings, 0.0)
+            
+            // Savings Rate = (4500 / 6200) * 100 approx 72.58%
+            assertEquals(72.58, state.savingsRate, 0.01)
+        }
+    }
+
+    @Test
     fun `updateSearchQuery filters transactions correctly`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, preferencesRepository, workManager)
 

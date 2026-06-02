@@ -26,6 +26,8 @@ data class TransactionUiState(
     val totalIncome: Double = 0.0,
     val cashSpent: Double = 0.0,
     val creditSpent: Double = 0.0,
+    val netSavings: Double = 0.0,
+    val savingsRate: Double = 0.0,
     val categoryAmounts: Map<String, Double> = emptyMap(),
     val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null

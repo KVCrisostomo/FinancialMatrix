@@ -68,20 +68,26 @@ class TransactionViewModel(
         }
 
         // 3. Compute Analytics (Excluding "CC Payment" from spending totals)
-        val activeAnalyticsList = filteredList.filter { it.category != "CC Payment" }
+        val today = java.time.LocalDate.now()
+        val monthlyTransactions = transactionList.filter { 
+            it.date.month == today.month && it.date.year == today.year && it.category != "CC Payment" 
+        }
         
-        val totalSpent = activeAnalyticsList.sumOf { it.amount }
-        val cashSpent = activeAnalyticsList.filter { !it.isCreditCard }.sumOf { it.amount }
-        val creditSpent = activeAnalyticsList.filter { it.isCreditCard }.sumOf { it.amount }
+        val totalSpent = monthlyTransactions.sumOf { it.amount }
+        val cashSpent = monthlyTransactions.filter { !it.isCreditCard }.sumOf { it.amount }
+        val creditSpent = monthlyTransactions.filter { it.isCreditCard }.sumOf { it.amount }
         
-        val categoryAmounts = activeAnalyticsList.groupBy { it.category }
+        val categoryAmounts = monthlyTransactions.groupBy { it.category }
             .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
         // 4. Compute Monthly Income
-        val today = java.time.LocalDate.now()
         val totalIncome = incomeList
             .filter { it.date.month == today.month && it.date.year == today.year }
             .sumOf { it.amount }
+
+        // 5. Compute Savings KPIs
+        val netSavings = totalIncome - totalSpent
+        val savingsRate = if (totalIncome > 0) (netSavings / totalIncome) * 100 else 0.0
 
         TransactionUiState(
             transactions = sortedList,
@@ -94,6 +100,8 @@ class TransactionViewModel(
             totalIncome = totalIncome,
             cashSpent = cashSpent,
             creditSpent = creditSpent,
+            netSavings = netSavings,
+            savingsRate = savingsRate,
             categoryAmounts = categoryAmounts,
             availableCategories = standardCategories,
             isLoading = false
