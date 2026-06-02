@@ -1,6 +1,7 @@
 package com.karlvcrisostomo.financialmatrix
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -10,6 +11,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,6 +49,12 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             FinancialMatrixTheme {
+                val ccUiState by creditCardViewModel.uiState.collectAsState()
+                
+                LaunchedEffect(ccUiState) {
+                    Log.d("CC_DEBUG", "ccUiState: isLoading=${ccUiState.isLoading}, cardsCount=${ccUiState.cards.size}, error=${ccUiState.errorMessage}")
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

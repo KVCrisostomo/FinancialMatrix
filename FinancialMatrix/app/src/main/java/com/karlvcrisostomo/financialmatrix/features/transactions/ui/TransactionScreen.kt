@@ -2,37 +2,34 @@ package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.AddCreditCardDialog
-import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDashboard
+import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardScreen
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.income.ui.AddIncomeDialog
-import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
-import java.util.Locale
+import com.karlvcrisostomo.financialmatrix.features.income.ui.IncomeScreen
+import kotlinx.coroutines.launch
+
+sealed class Screen(val route: String, val title: String) {
+    object Expenses : Screen("expenses", "Expenses Ledger")
+    object Income : Screen("income", "Income Ledger")
+    object CreditCards : Screen("credit_cards", "Credit Cards")
+    object Settings : Screen("settings", "Settings")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +40,12 @@ fun TransactionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val ccUiState by ccViewModel.uiState.collectAsState()
+    val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     val showAddDialog = remember { mutableStateOf(false) }
     val showAddIncomeDialog = remember { mutableStateOf(false) }
     val showAddCardDialog = remember { mutableStateOf(false) }
@@ -58,264 +61,150 @@ fun TransactionScreen(
                     outputStream.write(uiState.transactions.toCsvString().toByteArray())
                 }
             } catch (e: Exception) {
-                // Log or handle error - for now we'll rely on SAF behavior
+                // Handle error
             }
         }
     }
 
-    val totalSpent = uiState.totalSpent
-    val totalIncome = uiState.totalIncome
-    val cashSpent = uiState.cashSpent
-    val creditSpent = uiState.creditSpent
-    
-    val categoryAmounts = uiState.categoryAmounts
-
-    val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
-    val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0
-    
-    val budgetLimit = uiState.userPreferences.monthlyBudgetLimit
-    val remainingBudget = budgetLimit - totalSpent
-    val budgetPercentage = if (budgetLimit > 0) (totalSpent / budgetLimit) else 0.0
-    
     val currencySymbol = uiState.userPreferences.currencySymbol
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text("Financial Matrix Ledger") },
-                actions = {
-                    IconButton(onClick = { showAddIncomeDialog.value = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Income")
-                    }
-                    IconButton(onClick = { viewModel.toggleDefaultPaymentMethod() }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Toggle Default Payment",
-                            tint = if (uiState.userPreferences.defaultIsCreditCard) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { exportLauncher.launch("ledger.csv") }) {
-                        Icon(Icons.Default.Share, contentDescription = "Export CSV")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog.value = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Transaction")
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            // Dashboard Card View
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(text = "Total Income", style = MaterialTheme.typography.labelMedium)
-                            Text(
-                                text = "$currencySymbol${String.format(Locale.US, "%.2f", totalIncome)}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = Color(0xFF2E7D32) // Green for income
-                            )
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Spacer(modifier = Modifier.height(12.dp))
+                NavigationDrawerItem(
+                    label = { Text(Screen.Expenses.title) },
+                    selected = currentRoute == Screen.Expenses.route,
+                    onClick = {
+                        navController.navigate(Screen.Expenses.route) {
+                            popUpTo(Screen.Expenses.route) { inclusive = true }
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(text = "Total Outflow", style = MaterialTheme.typography.labelMedium)
-                            Text(
-                                text = "$currencySymbol${String.format(Locale.US, "%.2f", totalSpent)}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(text = "Cash: $currencySymbol${String.format(Locale.US, "%.2f", cashSpent)}", style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${String.format(Locale.US, "%.1f", cashPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(text = "Credit: $currencySymbol${String.format(Locale.US, "%.2f", creditSpent)}", style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${String.format(Locale.US, "%.1f", creditPercentage)}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-                        }
-                    }
-                    
-                    if (totalSpent > 0) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = "Spending Distribution", style = MaterialTheme.typography.labelSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        SpendingDistributionChart(
-                            categoryAmounts = categoryAmounts,
-                            totalAmount = totalSpent,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(12.dp)
-                        )
-                    }
-                    
-                    if (budgetLimit > 0) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showBudgetDialog.value = true },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            Column {
-                                Text(text = "Monthly Budget", style = MaterialTheme.typography.labelSmall)
-                                Text(
-                                    text = "$currencySymbol${String.format(Locale.US, "%.2f", budgetLimit)}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = if (remainingBudget >= 0) "Remaining" else "Over Budget",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (remainingBudget >= 0) Color.Unspecified else MaterialTheme.colorScheme.error
-                                )
-                                Text(
-                                    text = "$currencySymbol${String.format(Locale.US, "%.2f", Math.abs(remainingBudget))}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (remainingBudget >= 0) Color.Unspecified else MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-                        
-                        LinearProgressIndicator(
-                            progress = { budgetPercentage.coerceIn(0.0, 1.0).toFloat() },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp)
-                                .height(8.dp),
-                            color = when {
-                                budgetPercentage >= 1.0 -> MaterialTheme.colorScheme.error
-                                budgetPercentage >= 0.8 -> Color(0xFFFFA500) // Orange
-                                else -> MaterialTheme.colorScheme.primary
-                            },
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                        )
-                    }
-                }
-            }
-
-            CreditCardDashboard(
-                uiState = ccUiState,
-                currencySymbol = currencySymbol,
-                onAddCardClick = { showAddCardDialog.value = true },
-                onDeleteCardClick = { ccViewModel.deleteCard(it) }
-            )
-
-            // Category Filters
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = uiState.selectedCategory == null,
-                    onClick = { viewModel.updateCategoryFilter(null) },
-                    label = { Text("All") }
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
-                uiState.availableCategories.forEach { category ->
-                    FilterChip(
-                        selected = uiState.selectedCategory == category,
-                        onClick = { viewModel.updateCategoryFilter(category) },
-                        label = { Text(category) }
+                NavigationDrawerItem(
+                    label = { Text(Screen.Income.title) },
+                    selected = currentRoute == Screen.Income.route,
+                    onClick = {
+                        navController.navigate(Screen.Income.route)
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                NavigationDrawerItem(
+                    label = { Text(Screen.CreditCards.title) },
+                    selected = currentRoute == Screen.CreditCards.route,
+                    onClick = {
+                        navController.navigate(Screen.CreditCards.route)
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                NavigationDrawerItem(
+                    label = { Text(Screen.Settings.title) },
+                    selected = currentRoute == Screen.Settings.route,
+                    onClick = {
+                        navController.navigate(Screen.Settings.route)
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp, horizontal = 28.dp))
+                NavigationDrawerItem(
+                    label = { Text("Export CSV") },
+                    selected = false,
+                    onClick = {
+                        exportLauncher.launch("ledger.csv")
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+            }
+        },
+        gesturesEnabled = true
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = when (currentRoute) {
+                                Screen.Expenses.route -> Screen.Expenses.title
+                                Screen.Income.route -> Screen.Income.title
+                                Screen.CreditCards.route -> Screen.CreditCards.title
+                                Screen.Settings.route -> Screen.Settings.title
+                                else -> "Financial Matrix"
+                            }
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
+                when (currentRoute) {
+                    Screen.Expenses.route -> {
+                        FloatingActionButton(onClick = { showAddDialog.value = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Transaction")
+                        }
+                    }
+                    Screen.Income.route -> {
+                        FloatingActionButton(onClick = { showAddIncomeDialog.value = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Income")
+                        }
+                    }
+                    Screen.CreditCards.route -> {
+                        FloatingActionButton(onClick = { showAddCardDialog.value = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Card")
+                        }
+                    }
+                }
+            }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Expenses.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Screen.Expenses.route) {
+                    ExpensesScreen(
+                        uiState = uiState,
+                        onSearchQueryChange = { viewModel.updateSearchQuery(it) },
+                        onCategoryFilterChange = { viewModel.updateCategoryFilter(it) },
+                        onSortOrderChange = { viewModel.updateSortOrder(it) },
+                        onDeleteTransaction = { viewModel.deleteTransaction(it) }
                     )
                 }
-            }
-
-            // Search Bar
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                placeholder = { Text("Search description or category...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = MaterialTheme.shapes.medium,
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-
-            // Interactive Sorting Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                TransactionSortOrder.entries.forEach { order ->
-                    val isSelected = uiState.sortOrder == order
-                    Box(
-                        modifier = Modifier
-                            .clickable { viewModel.updateSortOrder(order) }
-                            .padding(vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = order.displayName.replace("₱", currencySymbol),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
-                        )
-                    }
+                composable(Screen.Income.route) {
+                    IncomeScreen(viewModel = viewModel)
                 }
-            }
-
-            // Ledger List View
-            when {
-                uiState.isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                composable(Screen.CreditCards.route) {
+                    CreditCardScreen(
+                        viewModel = ccViewModel,
+                        transactionViewModel = viewModel,
+                        onAddCardClick = { showAddCardDialog.value = true }
+                    )
                 }
-                uiState.errorMessage != null -> {
-                    Text(text = "Error: ${uiState.errorMessage}", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
-                }
-                uiState.transactions.isEmpty() -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "No transactions found.\nTap the + button to seed data.", modifier = Modifier.padding(16.dp))
-                    }
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                    ) {
-                        items(uiState.transactions, key = { it.id }) { transaction ->
-                            TransactionItem(
-                                transaction = transaction,
-                                currencySymbol = currencySymbol,
-                                onDelete = { viewModel.deleteTransaction(transaction) }
+                composable(Screen.Settings.route) {
+                    // Simple Settings UI
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Default Payment Method", style = MaterialTheme.typography.titleMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Default to Credit Card")
+                            Switch(
+                                checked = uiState.userPreferences.defaultIsCreditCard,
+                                onCheckedChange = { viewModel.toggleDefaultPaymentMethod() }
                             )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Monthly Budget Limit", style = MaterialTheme.typography.titleMedium)
+                        Button(onClick = { showBudgetDialog.value = true }) {
+                            Text("Set Budget (Current: $currencySymbol${uiState.userPreferences.monthlyBudgetLimit})")
                         }
                     }
                 }
@@ -358,7 +247,7 @@ fun TransactionScreen(
     }
 
     if (showBudgetDialog.value) {
-        var budgetText by remember { mutableStateOf(budgetLimit.toString()) }
+        var budgetText by remember { mutableStateOf(uiState.userPreferences.monthlyBudgetLimit.toString()) }
         AlertDialog(
             onDismissRequest = { showBudgetDialog.value = false },
             title = { Text("Set Monthly Budget") },
@@ -390,124 +279,5 @@ fun TransactionScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-fun TransactionItem(
-    transaction: TransactionEntity,
-    currencySymbol: String,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = transaction.description, style = MaterialTheme.typography.titleMedium)
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 4.dp)
-                ) {
-                    CategoryBadge(category = transaction.category)
-                    Text(
-                        text = if (transaction.isCreditCard) "Credit" else "Cash",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                
-                Text(text = transaction.date.formatToHumanReadable(), style = MaterialTheme.typography.labelSmall)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    // 3. Added explicit Locale protection
-                    text = "$currencySymbol${String.format(Locale.US, "%.2f", transaction.amount)}",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CategoryBadge(category: String) {
-    val containerColor = when (category) {
-        "Food" -> MaterialTheme.colorScheme.errorContainer
-        "Utilities" -> MaterialTheme.colorScheme.tertiaryContainer
-        "Transport" -> MaterialTheme.colorScheme.primaryContainer
-        "Entertainment" -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    val contentColor = when (category) {
-        "Food" -> MaterialTheme.colorScheme.onErrorContainer
-        "Utilities" -> MaterialTheme.colorScheme.onTertiaryContainer
-        "Transport" -> MaterialTheme.colorScheme.onPrimaryContainer
-        "Entertainment" -> MaterialTheme.colorScheme.onSecondaryContainer
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Surface(
-        color = containerColor,
-        contentColor = contentColor,
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Text(
-            text = category,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-        )
-    }
-}
-
-@Composable
-fun SpendingDistributionChart(
-    categoryAmounts: Map<String, Double>,
-    totalAmount: Double,
-    modifier: Modifier = Modifier
-) {
-    val categoryColors = mapOf(
-        "Food" to MaterialTheme.colorScheme.error,
-        "Utilities" to MaterialTheme.colorScheme.tertiary,
-        "Transport" to MaterialTheme.colorScheme.primary,
-        "Entertainment" to MaterialTheme.colorScheme.secondary,
-        "Other" to MaterialTheme.colorScheme.outline
-    )
-
-    Canvas(modifier = modifier) {
-        var currentX = 0f
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-
-        categoryAmounts.forEach { (category, amount) ->
-            val fraction = (amount / totalAmount).toFloat()
-            val segmentWidth = canvasWidth * fraction
-            val color = categoryColors[category] ?: Color.Gray
-
-            drawRect(
-                color = color,
-                topLeft = Offset(currentX, 0f),
-                size = Size(segmentWidth, canvasHeight)
-            )
-            currentX += segmentWidth
-        }
     }
 }

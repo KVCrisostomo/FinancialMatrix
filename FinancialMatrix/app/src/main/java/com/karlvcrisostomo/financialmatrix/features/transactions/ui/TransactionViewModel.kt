@@ -85,6 +85,7 @@ class TransactionViewModel(
 
         TransactionUiState(
             transactions = sortedList,
+            incomeTransactions = incomeList,
             sortOrder = sortOrder,
             selectedCategory = category,
             searchQuery = query,
@@ -149,6 +150,12 @@ class TransactionViewModel(
     fun addIncome(income: IncomeEntity) {
         viewModelScope.launch {
             incomeRepository.insertIncome(income)
+        }
+    }
+
+    fun deleteIncome(income: IncomeEntity) {
+        viewModelScope.launch {
+            incomeRepository.deleteIncome(income)
         }
     }
 
