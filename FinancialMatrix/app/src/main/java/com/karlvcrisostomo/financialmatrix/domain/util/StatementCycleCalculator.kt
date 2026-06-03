@@ -18,10 +18,7 @@ object StatementCycleCalculator {
         today: LocalDate
     ): Pair<LocalDate, LocalDate> {
         // Find the billing date for the current month, defensively clamped
-        val currentMonthBillingDate = today.with(TemporalAdjusters.lastDayOfMonth()).let { lastDay ->
-            val day = if (billingDay <= lastDay.dayOfMonth) billingDay else lastDay.dayOfMonth
-            today.withDayOfMonth(day)
-        }
+        val currentMonthBillingDate = calculateSafeDate(today.year, today.monthValue, billingDay)
 
         // If today is on or before the current month's billing date, 
         // the "previous" statement closed last month.
@@ -30,13 +27,23 @@ object StatementCycleCalculator {
             currentMonthBillingDate
         } else {
             val previousMonth = today.minusMonths(1)
-            val lastDayPrev = previousMonth.with(TemporalAdjusters.lastDayOfMonth())
-            val day = if (billingDay <= lastDayPrev.dayOfMonth) billingDay else lastDayPrev.dayOfMonth
-            previousMonth.withDayOfMonth(day)
+            calculateSafeDate(previousMonth.year, previousMonth.monthValue, billingDay)
         }
 
+        // Start date is one month and one day before the end date
+        // Note: minusMonths(1) already handles day-of-month truncation defensively
         val windowStart = windowEnd.minusMonths(1).plusDays(1)
         
         return Pair(windowStart, windowEnd)
+    }
+
+    /**
+     * Creates a [LocalDate] while ensuring the [day] does not exceed the maximum 
+     * valid day for the given [year] and [month].
+     */
+    private fun calculateSafeDate(year: Int, month: Int, day: Int): LocalDate {
+        val baseDate = LocalDate.of(year, month, 1)
+        val maxDay = baseDate.with(TemporalAdjusters.lastDayOfMonth()).dayOfMonth
+        return baseDate.withDayOfMonth(if (day > maxDay) maxDay else day)
     }
 }

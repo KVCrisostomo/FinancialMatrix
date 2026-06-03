@@ -68,7 +68,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `initial uiState is correct and excludes CC Payment from totals and includes monthly income`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             // Initial loading state
@@ -92,7 +92,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `initial uiState computes Savings KPIs correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             val loadingState = awaitItem()
@@ -114,7 +114,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `updateSearchQuery filters transactions correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Loading
@@ -132,7 +132,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `updateCategoryFilter filters transactions correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Loading
@@ -150,7 +150,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `updateSortOrder reorders transactions correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Loading
@@ -169,7 +169,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `addTransaction calls repository and triggers budget check`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
         val newTransaction = TransactionEntity(3, "Coffee", 120.0, LocalDate.now(), "Food", false, "Primary")
 
         viewModel.uiState.test {
@@ -189,7 +189,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `addIncome calls repository`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
         val newIncome = IncomeEntity(4, "Bonus", 500.0, LocalDate.now())
 
         viewModel.uiState.test {
@@ -206,7 +206,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `deleteTransaction calls repository`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
         val transactionToDelete = mockTransactions[0]
 
         viewModel.uiState.test {
@@ -222,20 +222,21 @@ class TransactionViewModelTest {
     }
 
     @Test
-    fun `authentication flow transitions correctly`() = runTest {
-        // This test simulates the logic in MainActivity and Navigation
-        // since the state is currently in MainActivity and TransactionScreen NavHost.
-        
-        // We verify that the VM provides the correct data for the Ledger Success state.
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+    fun `authentication flow transitions correctly from Loading to Success`() = runTest {
+        // Mocking is already set up in @Before
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
         
         viewModel.uiState.test {
+            // 1. Initial emission must be Loading
             val loadingState = awaitItem()
-            assertTrue(loadingState.isLoading)
+            assertTrue("Expected initial state to be loading", loadingState.isLoading)
             
+            // 2. Subsequent emission must be Success with populated data
             val successState = awaitItem()
-            assertEquals(mockTransactions.size, successState.transactions.size)
-            assertEquals(1700.0, successState.totalSpent, 0.0)
+            assertEquals("Expected all mock transactions to be present", mockTransactions.size, successState.transactions.size)
+            // 200 (Food) + 1500 (Utilities) = 1700. CC Payment (1000) should be excluded.
+            assertEquals("Expected spending to exclude internal transfers", 1700.0, successState.totalSpent, 0.0)
+            assertEquals("Expected UI state to no longer be loading", false, successState.isLoading)
 
             cancelAndIgnoreRemainingEvents()
         }

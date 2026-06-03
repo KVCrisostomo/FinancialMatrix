@@ -77,4 +77,29 @@ class StatementCycleCalculatorTest {
         assertEquals(LocalDate.of(2026, 5, 1), end)
         assertEquals(LocalDate.of(2026, 4, 2), start)
     }
+
+    @Test
+    fun `year boundary - January today before billing day`() {
+        val billingDay = 15
+        val today = LocalDate.of(2026, 1, 10)
+        
+        // Previous statement closed in Dec 2025.
+        val (start, end) = StatementCycleCalculator.calculatePreviousStatementWindow(billingDay, today)
+        
+        assertEquals(LocalDate.of(2025, 12, 15), end)
+        assertEquals(LocalDate.of(2025, 11, 16), start)
+    }
+
+    @Test
+    fun `clamping - billing day 31 in April`() {
+        val billingDay = 31
+        val today = LocalDate.of(2026, 5, 5)
+        
+        // Previous statement closed in April. April has 30 days.
+        val (start, end) = StatementCycleCalculator.calculatePreviousStatementWindow(billingDay, today)
+        
+        assertEquals(LocalDate.of(2026, 4, 30), end)
+        assertEquals(LocalDate.of(2026, 3, 31), start) // March 31 - 1 month = Feb 28/29? No, LocalDate logic
+        // 2026-04-30 minus 1 month = 2026-03-30. Plus 1 day = 2026-03-31. Correct.
+    }
 }
