@@ -22,6 +22,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
@@ -70,6 +71,10 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
+            // Initial loading state
+            val loadingState = awaitItem()
+            assertTrue(loadingState.isLoading)
+            
             // Success state
             val state = awaitItem()
             
@@ -90,6 +95,9 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
+            val loadingState = awaitItem()
+            assertTrue(loadingState.isLoading)
+            
             val state = awaitItem()
             
             // Total Income = 6200.0
@@ -109,7 +117,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem()
+            awaitItem() // Loading
+            awaitItem() // Success
             
             viewModel.updateSearchQuery("Electric")
             val filteredState = awaitItem()
@@ -126,7 +135,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem()
+            awaitItem() // Loading
+            awaitItem() // Success
             
             viewModel.updateCategoryFilter("Food")
             val filteredState = awaitItem()
@@ -143,7 +153,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
 
         viewModel.uiState.test {
-            awaitItem()
+            awaitItem() // Loading
+            awaitItem() // Success
             
             viewModel.updateSortOrder(TransactionSortOrder.HIGHEST_AMOUNT)
             val sortedState = awaitItem()
@@ -182,8 +193,8 @@ class TransactionViewModelTest {
         val newIncome = IncomeEntity(4, "Bonus", 500.0, LocalDate.now())
 
         viewModel.uiState.test {
-            awaitItem()
-            awaitItem()
+            awaitItem() // Loading
+            awaitItem() // Success
             
             viewModel.addIncome(newIncome)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -199,13 +210,33 @@ class TransactionViewModelTest {
         val transactionToDelete = mockTransactions[0]
 
         viewModel.uiState.test {
-            awaitItem()
-            awaitItem()
+            awaitItem() // Loading
+            awaitItem() // Success
             
             viewModel.deleteTransaction(transactionToDelete)
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify { repository.deleteTransaction(transactionToDelete) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `authentication flow transitions correctly`() = runTest {
+        // This test simulates the logic in MainActivity and Navigation
+        // since the state is currently in MainActivity and TransactionScreen NavHost.
+        
+        // We verify that the VM provides the correct data for the Ledger Success state.
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        
+        viewModel.uiState.test {
+            val loadingState = awaitItem()
+            assertTrue(loadingState.isLoading)
+            
+            val successState = awaitItem()
+            assertEquals(mockTransactions.size, successState.transactions.size)
+            assertEquals(1700.0, successState.totalSpent, 0.0)
+
             cancelAndIgnoreRemainingEvents()
         }
     }

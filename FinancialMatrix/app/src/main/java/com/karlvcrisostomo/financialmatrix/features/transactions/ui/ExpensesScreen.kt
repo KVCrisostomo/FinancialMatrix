@@ -21,6 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
+import com.karlvcrisostomo.financialmatrix.ui.theme.AlertRed
+import com.karlvcrisostomo.financialmatrix.ui.theme.SuccessGreen
+import com.karlvcrisostomo.financialmatrix.ui.theme.WarningOrange
 import java.util.Locale
 
 @Composable
@@ -141,7 +144,7 @@ fun ExpensesScreen(
                             .height(8.dp),
                         color = when {
                             budgetPercentage >= 1.0 -> MaterialTheme.colorScheme.error
-                            budgetPercentage >= 0.8 -> Color(0xFFFFA500) // Orange
+                            budgetPercentage >= 0.8 -> WarningOrange // Orange
                             else -> MaterialTheme.colorScheme.primary
                         },
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
