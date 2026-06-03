@@ -8,6 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.karlvcrisostomo.financialmatrix.ui.theme.AlertRed
+import com.karlvcrisostomo.financialmatrix.ui.theme.SuccessGreen
+import com.karlvcrisostomo.financialmatrix.ui.theme.WarningOrange
 import java.util.Locale
 
 @Composable
@@ -18,9 +21,9 @@ fun SavingsDashboard(
     modifier: Modifier = Modifier
 ) {
     val healthColor = when {
-        savingsRate >= 30 -> Color(0xFF2E7D32) // Strong Green
-        savingsRate >= 10 -> Color(0xFFFFA500) // Orange
-        savingsRate > 0 -> Color(0xFFD32F2F) // Red
+        savingsRate >= 30 -> SuccessGreen // Strong Green
+        savingsRate >= 10 -> WarningOrange // Orange
+        savingsRate > 0 -> AlertRed // Red
         else -> Color.Gray
     }
 
@@ -46,7 +49,7 @@ fun SavingsDashboard(
                         text = "$currencySymbol${String.format(Locale.US, "%.2f", netSavings)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (netSavings >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                        color = if (netSavings >= 0) SuccessGreen else MaterialTheme.colorScheme.error
                     )
                 }
                 

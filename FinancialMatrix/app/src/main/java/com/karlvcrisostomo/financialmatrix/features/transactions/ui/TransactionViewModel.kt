@@ -16,6 +16,7 @@ import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringT
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import com.karlvcrisostomo.financialmatrix.domain.model.TransactionCategory
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,7 +32,8 @@ class TransactionViewModel(
     private val incomeRepository: IncomeRepository,
     private val recurringRepository: RecurringTransactionRepository,
     private val preferencesRepository: UserPreferencesRepository,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
@@ -119,12 +121,13 @@ class TransactionViewModel(
             isLoading = false
         )
     }
+    .flowOn(defaultDispatcher) // Offload heavy processing from Main thread
     .catch { exception ->
         emit(TransactionUiState(errorMessage = exception.message, isLoading = false))
     }
     .stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Grace period for configuration changes (like screen rotations)
+        started = SharingStarted.WhileSubscribed(5000), // Resource-efficient lifecycle management
         initialValue = TransactionUiState(isLoading = true)
     )
 
@@ -215,7 +218,8 @@ class TransactionViewModel(
                     application.incomeRepository,
                     application.recurringTransactionRepository,
                     application.userPreferencesRepository,
-                    WorkManager.getInstance(application)
+                    WorkManager.getInstance(application),
+                    Dispatchers.Default
                 ) as T
             }
         }

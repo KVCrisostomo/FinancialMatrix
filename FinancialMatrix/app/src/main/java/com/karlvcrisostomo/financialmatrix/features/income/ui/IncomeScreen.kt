@@ -18,6 +18,7 @@ import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionUiState
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
+import com.karlvcrisostomo.financialmatrix.ui.theme.SuccessGreen
 import java.util.Locale
 
 @Composable
@@ -42,7 +43,7 @@ fun IncomeScreen(
                 Text(
                     text = "$currencySymbol${String.format(Locale.US, "%.2f", totalIncome)}",
                     style = MaterialTheme.typography.headlineLarge,
-                    color = Color(0xFF2E7D32)
+                    color = SuccessGreen
                 )
             }
         }
@@ -107,7 +108,7 @@ fun IncomeItem(
                 Text(
                     text = "$currencySymbol${String.format(Locale.US, "%.2f", income.amount)}",
                     style = MaterialTheme.typography.titleLarge,
-                    color = Color(0xFF2E7D32),
+                    color = SuccessGreen,
                     modifier = Modifier.padding(end = 8.dp)
                 )
                 IconButton(onClick = onDelete) {
