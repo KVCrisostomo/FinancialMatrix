@@ -61,6 +61,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.karlvcrisostomo.financialmatrix.R
+import com.karlvcrisostomo.financialmatrix.core.util.exportTransactionsToStream
 import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDialog
@@ -111,10 +112,10 @@ fun TransactionScreen(
         uri?.let {
             try {
                 context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    outputStream.write(uiState.transactions.toCsvString().toByteArray())
+                    exportTransactionsToStream(outputStream, uiState.transactions)
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Handle error - in a real app, we might show a snackbar
             }
         }
     }
@@ -198,6 +199,12 @@ fun TransactionScreen(
                                     )
                                 },
                                 actions = {
+                                    IconButton(onClick = { exportLauncher.launch("ledger.csv") }) {
+                                        Icon(
+                                            painter = painterResource(id = android.R.drawable.ic_menu_save),
+                                            contentDescription = "Export CSV"
+                                        )
+                                    }
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
                                         Icon(Icons.Default.Menu, contentDescription = "Menu")
                                     }

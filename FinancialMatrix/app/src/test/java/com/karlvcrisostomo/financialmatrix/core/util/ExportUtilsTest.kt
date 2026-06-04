@@ -3,6 +3,7 @@ package com.karlvcrisostomo.financialmatrix.core.util
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 
 class ExportUtilsTest {
@@ -73,6 +74,47 @@ class ExportUtilsTest {
 
         // Act
         val result = transactions.toCsvString()
+
+        // Assert
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun `exportTransactionsToStream writes correct CSV to stream`() {
+        // Arrange
+        val transactions = listOf(
+            TransactionEntity(
+                id = 1,
+                description = "Lunch",
+                amount = 250.0,
+                date = LocalDate.of(2026, 6, 1),
+                category = "Food",
+                isCreditCard = false,
+                accountName = "Primary"
+            )
+        )
+        val expected = "Date,Description,Amount,Category,PaymentMethod\n" +
+                "2026-06-01,\"Lunch\",250.0,Food,Cash"
+        val outputStream = ByteArrayOutputStream()
+
+        // Act
+        exportTransactionsToStream(outputStream, transactions)
+        val result = outputStream.toString()
+
+        // Assert
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun `exportTransactionsToStream writes only header for empty list`() {
+        // Arrange
+        val transactions = emptyList<TransactionEntity>()
+        val expected = "Date,Description,Amount,Category,PaymentMethod\n"
+        val outputStream = ByteArrayOutputStream()
+
+        // Act
+        exportTransactionsToStream(outputStream, transactions)
+        val result = outputStream.toString()
 
         // Assert
         assertEquals(expected, result)

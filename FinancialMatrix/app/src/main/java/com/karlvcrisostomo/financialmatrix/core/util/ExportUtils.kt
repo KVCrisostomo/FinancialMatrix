@@ -1,6 +1,7 @@
 package com.karlvcrisostomo.financialmatrix.core.util
 
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
+import java.io.OutputStream
 
 /**
  * Converts a list of [TransactionEntity] into a CSV formatted string.
@@ -12,4 +13,13 @@ fun List<TransactionEntity>.toCsvString(): String {
         "${transaction.date},\"${transaction.description}\",${transaction.amount},${transaction.category},$paymentMethod"
     }
     return header + rows
+}
+
+/**
+ * Writes the transaction list to the given [OutputStream] in CSV format.
+ */
+fun exportTransactionsToStream(outputStream: OutputStream, transactions: List<TransactionEntity>) {
+    outputStream.bufferedWriter().use { writer ->
+        writer.write(transactions.toCsvString())
+    }
 }
