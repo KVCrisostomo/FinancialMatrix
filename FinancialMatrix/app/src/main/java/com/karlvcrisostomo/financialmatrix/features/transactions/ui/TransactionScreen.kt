@@ -71,6 +71,7 @@ import com.karlvcrisostomo.financialmatrix.features.income.ui.IncomeScreen
 import com.karlvcrisostomo.financialmatrix.ui.theme.LightGold
 import com.karlvcrisostomo.financialmatrix.ui.theme.MidnightNavy
 import com.karlvcrisostomo.financialmatrix.ui.theme.PremiumGold
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -109,12 +110,14 @@ fun TransactionScreen(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
         uri?.let {
-            try {
-                context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    outputStream.write(uiState.transactions.toCsvString().toByteArray())
+            scope.launch(Dispatchers.IO) { // MANDATE: Dispatch I/O off the main thread
+                try {
+                    context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                        outputStream.write(uiState.transactions.toCsvString().toByteArray())
+                    }
+                } catch (e: Exception) {
+                    // Handle error - in a production app we'd show a Snackbar
                 }
-            } catch (e: Exception) {
-                // Handle error
             }
         }
     }
