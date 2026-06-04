@@ -1,5 +1,6 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -33,6 +34,8 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -105,6 +108,7 @@ fun TransactionScreen(
     val editingCard = remember { mutableStateOf<CreditCardEntity?>(null) }
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
@@ -113,10 +117,14 @@ fun TransactionScreen(
             scope.launch(Dispatchers.IO) { // MANDATE: Dispatch I/O off the main thread
                 try {
                     context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                        outputStream.write(uiState.transactions.toCsvString().toByteArray())
+                        val csvData = uiState.transactions.toCsvString()
+                        outputStream.write(csvData.toByteArray())
+                        Log.d("Export", "CSV Exported successfully to $it")
+                        snackbarHostState.showSnackbar("Ledger exported successfully")
                     }
                 } catch (e: Exception) {
-                    // Handle error - in a production app we'd show a Snackbar
+                    Log.e("Export", "Failed to export CSV", e)
+                    snackbarHostState.showSnackbar("Failed to export ledger: ${e.message}")
                 }
             }
         }
@@ -186,6 +194,7 @@ fun TransactionScreen(
         ) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Scaffold(
+                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                     topBar = {
                         if (currentRoute != Screen.Loading.route) {
                             TopAppBar(
