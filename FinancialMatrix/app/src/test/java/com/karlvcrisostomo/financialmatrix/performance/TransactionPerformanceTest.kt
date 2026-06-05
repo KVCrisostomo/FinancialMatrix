@@ -69,7 +69,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `search and filter on 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Initial loading
@@ -89,7 +89,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `sorting 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Initial loading

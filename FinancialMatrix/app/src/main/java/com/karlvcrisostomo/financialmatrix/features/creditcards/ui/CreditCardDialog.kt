@@ -27,16 +27,16 @@ fun CreditCardDialog(
 ) {
     var name by remember { mutableStateOf(card?.name ?: "") }
     var billingDayText by remember { mutableStateOf(card?.billingDay?.toString() ?: "") }
-    var dueDayText by remember { mutableStateOf(card?.dueDay?.toString() ?: "") }
+    var daysAfterBillingText by remember { mutableStateOf(card?.daysAfterBillingDate?.toString() ?: "") }
     var limitText by remember { mutableStateOf(card?.creditLimit?.toString() ?: "") }
 
     val billingDay = billingDayText.toIntOrNull() ?: 0
-    val dueDay = dueDayText.toIntOrNull() ?: 0
+    val daysAfterBilling = daysAfterBillingText.toIntOrNull() ?: 0
     val limit = limitText.toDoubleOrNull() ?: 0.0
 
     val isInputValid = name.isNotBlank() && 
             billingDay in 1..31 && 
-            dueDay in 1..31 && 
+            daysAfterBilling >= 0 && 
             limit > 0.0
 
     AlertDialog(
@@ -60,9 +60,9 @@ fun CreditCardDialog(
                 )
 
                 OutlinedTextField(
-                    value = dueDayText,
-                    onValueChange = { dueDayText = it },
-                    label = { Text("Due Day (1-31)") },
+                    value = daysAfterBillingText,
+                    onValueChange = { daysAfterBillingText = it },
+                    label = { Text("Days After Billing (e.g., 20)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -84,7 +84,7 @@ fun CreditCardDialog(
                             id = card?.id ?: 0,
                             name = name,
                             billingDay = billingDay,
-                            dueDay = dueDay,
+                            daysAfterBillingDate = daysAfterBilling,
                             creditLimit = limit
                         )
                     )

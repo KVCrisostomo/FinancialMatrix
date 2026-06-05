@@ -91,10 +91,10 @@ class TransactionViewModelTest {
     }
 
     @Test
-    fun `initial uiState computes Savings KPIs correctly`() = runTest {
+    fun `initial savingsUiState computes Savings KPIs correctly`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
-        viewModel.uiState.test {
+        viewModel.savingsUiState.test {
             val loadingState = awaitItem()
             assertTrue(loadingState.isLoading)
             

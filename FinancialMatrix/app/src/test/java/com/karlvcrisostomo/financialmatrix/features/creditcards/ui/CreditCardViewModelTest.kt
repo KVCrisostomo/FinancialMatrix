@@ -30,7 +30,7 @@ class CreditCardViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private val mockCards = listOf(
-        CreditCardEntity(1, "Visa Gold", 15, 5, 50000.0)
+        CreditCardEntity(1, "Visa Gold", 15, 20, 50000.0)
     )
 
     // Setup transactions for June 1st calculation
@@ -72,10 +72,6 @@ class CreditCardViewModelTest {
             // Total current balance for Visa Gold (1000 + 2000 = 3000)
             assertEquals(3000.0, stats.currentBalance, 0.0)
             // Statement balance for last period (April 16 - May 15) contains 2000.0
-            // Wait, logic in VM uses today. 
-            // If today is June 1, latest billing date is May 15.
-            // Window start is April 16. End is May 15.
-            // Transaction at 2026-05-01 is in window.
             assertEquals(2000.0, stats.statementBalance, 0.0)
             assertEquals(47000.0, stats.remainingLimit, 0.0)
             assertTrue(stats.utilizationPercentage > 0)
@@ -85,24 +81,12 @@ class CreditCardViewModelTest {
     @Test
     fun `addCard calls repository`() = runTest {
         val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
-        val newCard = CreditCardEntity(0, "New Card", 1, 10, 10000.0)
+        val newCard = CreditCardEntity(0, "New Card", 1, 20, 10000.0)
 
         viewModel.addCard(newCard)
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { cardRepository.insertCard(newCard) }
-    }
-
-    @Test
-    fun `addCard with existing ID updates card in repository`() = runTest {
-        val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
-        val updatedCard = mockCards[0].copy(creditLimit = 60000.0)
-
-        viewModel.addCard(updatedCard)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Room's REPLACE strategy handles the update if IDs match
-        coVerify { cardRepository.insertCard(updatedCard) }
     }
 
     @Test

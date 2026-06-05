@@ -99,10 +99,6 @@ class TransactionViewModel(
             .filter { it.date.month == today.month && it.date.year == today.year }
             .sumOf { it.amount }
 
-        // 5. Compute Savings KPIs
-        val netSavings = totalIncome - totalSpent
-        val savingsRate = if (totalIncome > 0) (netSavings / totalIncome) * 100 else 0.0
-
         TransactionUiState(
             transactions = sortedList,
             incomeTransactions = incomeList,
@@ -114,8 +110,6 @@ class TransactionViewModel(
             totalIncome = totalIncome,
             cashSpent = cashSpent,
             creditSpent = creditSpent,
-            netSavings = netSavings,
-            savingsRate = savingsRate,
             categoryAmounts = categoryAmounts,
             availableCategories = standardCategories,
             isLoading = false
@@ -129,6 +123,42 @@ class TransactionViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000), // Resource-efficient lifecycle management
         initialValue = TransactionUiState(isLoading = true)
+    )
+
+    // Decoupled Savings KPI state stream
+    val savingsUiState: StateFlow<SavingsUiState> = combine(
+        repository.getAllTransactions(),
+        incomeRepository.getAllIncome()
+    ) { transactions, income ->
+        val today = java.time.LocalDate.now()
+        
+        val monthlyTransactions = transactions.filter { 
+            it.date.month == today.month && 
+            it.date.year == today.year && 
+            !TransactionCategory.from(it.category).isInternalTransfer()
+        }
+        val totalSpent = monthlyTransactions.sumOf { it.amount }
+
+        val monthlyIncome = income.filter { 
+            it.date.month == today.month && 
+            it.date.year == today.year 
+        }
+        val totalIncome = monthlyIncome.sumOf { it.amount }
+
+        val netSavings = totalIncome - totalSpent
+        val savingsRate = if (totalIncome > 0) (netSavings / totalIncome) * 100 else 0.0
+
+        SavingsUiState(
+            netSavings = netSavings,
+            savingsRate = savingsRate,
+            isLoading = false
+        )
+    }
+    .flowOn(defaultDispatcher)
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SavingsUiState(isLoading = true)
     )
 
 

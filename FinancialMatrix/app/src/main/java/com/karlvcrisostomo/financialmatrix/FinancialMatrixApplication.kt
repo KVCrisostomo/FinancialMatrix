@@ -34,7 +34,7 @@ class FinancialMatrixApplication : Application() {
             AppDatabase::class.java,
             "financial_matrix_database",
         )
-            // Explicitly pass true to indicate all tables should be dropped on schema fallback
+            .addMigrations(AppDatabase.MIGRATION_3_4)
             .fallbackToDestructiveMigration(true)
             .build()
     }
