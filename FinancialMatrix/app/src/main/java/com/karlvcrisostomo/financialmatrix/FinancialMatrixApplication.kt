@@ -12,8 +12,6 @@ import androidx.work.WorkManager
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.database.AppDatabase
 import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
-import com.karlvcrisostomo.financialmatrix.features.transactions.worker.RecurringTransactionWorker
-import java.util.concurrent.TimeUnit
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.OfflineCreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
@@ -22,6 +20,8 @@ import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineRec
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.worker.RecurringTransactionWorker
+import java.util.concurrent.TimeUnit
 
 private const val USER_PREFERENCES_NAME = "user_preferences"
 private val Context.dataStore by preferencesDataStore(name = USER_PREFERENCES_NAME)
@@ -35,7 +35,6 @@ class FinancialMatrixApplication : Application() {
             "financial_matrix_database",
         )
             .addMigrations(AppDatabase.MIGRATION_3_4)
-            .fallbackToDestructiveMigration(true)
             .build()
     }
 

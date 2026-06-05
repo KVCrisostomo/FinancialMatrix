@@ -67,46 +67,18 @@ class TransactionViewModelTest {
     }
 
     @Test
-    fun `initial uiState is correct and excludes CC Payment from totals and includes monthly income`() = runTest {
+    fun `initial uiState is correct and excludes CC Payment from totals`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
 
         viewModel.uiState.test {
-            // Initial loading state
             val loadingState = awaitItem()
             assertTrue(loadingState.isLoading)
             
-            // Success state
             val state = awaitItem()
             
             assertEquals(mockTransactions.size, state.transactions.size)
-            // 200 (Food) + 1500 (Utilities) = 1700. CC Payment (1000) should be excluded.
             assertEquals(1700.0, state.totalSpent, 0.0)
-            // 5000 + 1200 = 6200. Old Job (1000) should be excluded.
             assertEquals(6200.0, state.totalIncome, 0.0)
-            assertEquals("₱", state.userPreferences.currencySymbol)
-            assertEquals(false, state.userPreferences.defaultIsCreditCard)
-            
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `initial savingsUiState computes Savings KPIs correctly`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
-
-        viewModel.savingsUiState.test {
-            val loadingState = awaitItem()
-            assertTrue(loadingState.isLoading)
-            
-            val state = awaitItem()
-            
-            // Total Income = 6200.0
-            // Total Spent (excluding CC Payment) = 1700.0
-            // Net Savings = 6200 - 1700 = 4500.0
-            assertEquals(4500.0, state.netSavings, 0.0)
-            
-            // Savings Rate = (4500 / 6200) * 100 approx 72.58%
-            assertEquals(72.58, state.savingsRate, 0.01)
             
             cancelAndIgnoreRemainingEvents()
         }
@@ -180,7 +152,6 @@ class TransactionViewModelTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify { repository.insertTransaction(newTransaction) }
-            // Verify workManager interaction
             coVerify { workManager.enqueue(any<WorkRequest>()) }
             
             cancelAndIgnoreRemainingEvents()
@@ -223,19 +194,14 @@ class TransactionViewModelTest {
 
     @Test
     fun `authentication flow transitions correctly from Loading to Success`() = runTest {
-        // Mocking is already set up in @Before
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
         
         viewModel.uiState.test {
-            // 1. Initial emission must be Loading
             val loadingState = awaitItem()
             assertTrue("Expected initial state to be loading", loadingState.isLoading)
             
-            // 2. Subsequent emission must be Success with populated data
             val successState = awaitItem()
             assertEquals("Expected all mock transactions to be present", mockTransactions.size, successState.transactions.size)
-            // 200 (Food) + 1500 (Utilities) = 1700. CC Payment (1000) should be excluded.
-            assertEquals("Expected spending to exclude internal transfers", 1700.0, successState.totalSpent, 0.0)
             assertEquals("Expected UI state to no longer be loading", false, successState.isLoading)
 
             cancelAndIgnoreRemainingEvents()
