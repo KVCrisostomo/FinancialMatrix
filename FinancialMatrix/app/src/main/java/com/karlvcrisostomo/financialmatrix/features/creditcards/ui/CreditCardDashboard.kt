@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
@@ -35,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
+import com.karlvcrisostomo.financialmatrix.domain.util.StatementCycleCalculator
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import java.util.Locale
 
@@ -100,6 +100,11 @@ fun CreditCardSummaryCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dueDate = StatementCycleCalculator.calculateDueDate(
+        stats.statementWindowEnd,
+        stats.card.daysAfterBillingDate
+    )
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -121,7 +126,7 @@ fun CreditCardSummaryCard(
                         shape = MaterialTheme.shapes.extraSmall
                     ) {
                         Text(
-                            text = "Due: Day ${stats.card.dueDay}",
+                            text = "Due: ${dueDate.formatToHumanReadable()}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSecondary,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)

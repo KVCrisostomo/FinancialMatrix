@@ -68,6 +68,7 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardScr
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.income.ui.AddIncomeDialog
 import com.karlvcrisostomo.financialmatrix.features.income.ui.IncomeScreen
+import com.karlvcrisostomo.financialmatrix.features.income.ui.IncomeViewModel
 import com.karlvcrisostomo.financialmatrix.ui.theme.LightGold
 import com.karlvcrisostomo.financialmatrix.ui.theme.MidnightNavy
 import com.karlvcrisostomo.financialmatrix.ui.theme.PremiumGold
@@ -87,6 +88,7 @@ sealed class Screen(val route: String, val title: String) {
 fun TransactionScreen(
     viewModel: TransactionViewModel,
     ccViewModel: CreditCardViewModel,
+    incomeViewModel: IncomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = IncomeViewModel.Factory),
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -247,7 +249,10 @@ fun TransactionScreen(
                             )
                         }
                         composable(Screen.Income.route) {
-                            IncomeScreen(viewModel = viewModel)
+                            IncomeScreen(
+                                viewModel = viewModel,
+                                incomeViewModel = incomeViewModel
+                            )
                         }
                         composable(Screen.CreditCards.route) {
                             CreditCardScreen(

@@ -8,6 +8,6 @@ data class CreditCardEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val billingDay: Int, // 1-31
-    val dueDay: Int, // 1-31
+    val daysAfterBillingDate: Int, // Relative offset (e.g., 20 days)
     val creditLimit: Double
 )

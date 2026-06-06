@@ -38,6 +38,17 @@ object StatementCycleCalculator {
     }
 
     /**
+     * Calculates the due date by applying a relative offset to the [billingDate].
+     * 
+     * @param billingDate The date the statement closed.
+     * @param daysAfterBillingDate The relative offset (positive integer).
+     * @return The calculated due date.
+     */
+    fun calculateDueDate(billingDate: LocalDate, daysAfterBillingDate: Int): LocalDate {
+        return billingDate.plusDays(daysAfterBillingDate.toLong())
+    }
+
+    /**
      * Creates a [LocalDate] while ensuring the [day] does not exceed the maximum 
      * valid day for the given [year] and [month].
      */

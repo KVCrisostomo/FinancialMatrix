@@ -51,12 +51,6 @@ fun ExpensesScreen(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        SavingsDashboard(
-            netSavings = uiState.netSavings,
-            savingsRate = uiState.savingsRate,
-            currencySymbol = currencySymbol
-        )
-
         // Dashboard Card View
         Card(
             modifier = Modifier
@@ -267,10 +261,15 @@ fun TransactionItem(
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = transaction.description, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = transaction.description,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
                 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -283,22 +282,27 @@ fun TransactionItem(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-                
-                Text(text = transaction.date.formatToHumanReadable(), style = MaterialTheme.typography.labelSmall)
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    // 3. Added explicit Locale protection
-                    text = "$currencySymbol${String.format(Locale.US, "%.2f", transaction.amount)}",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(end = 8.dp)
+                    text = transaction.date.formatToHumanReadable(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "$currencySymbol${String.format(Locale.US, "%.2f", transaction.amount)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
+                    IconButton(onClick = onDelete, modifier = Modifier.size(24.dp).padding(start = 8.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }

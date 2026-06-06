@@ -10,6 +10,12 @@ enum class TransactionSortOrder(val displayName: String) {
     LOWEST_AMOUNT(displayName = "Lowest ₱")
 }
 
+data class SavingsUiState(
+    val netSavings: Double = 0.0,
+    val savingsRate: Double = 0.0,
+    val isLoading: Boolean = false
+)
+
 data class TransactionUiState(
     val isLoading: Boolean = false,
     val transactions: List<TransactionEntity> = emptyList(),
@@ -26,8 +32,6 @@ data class TransactionUiState(
     val totalIncome: Double = 0.0,
     val cashSpent: Double = 0.0,
     val creditSpent: Double = 0.0,
-    val netSavings: Double = 0.0,
-    val savingsRate: Double = 0.0,
     val categoryAmounts: Map<String, Double> = emptyMap(),
     val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null

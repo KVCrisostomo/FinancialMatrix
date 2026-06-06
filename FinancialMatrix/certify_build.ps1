@@ -3,13 +3,13 @@
 
 Write-Host "Starting Build Certification..." -ForegroundColor Cyan
 
-# 1. Run Core Unit Tests
-Write-Host "Running Core Unit Tests..." -ForegroundColor Yellow
+# 1. Run Core Unit & Domain Tests
+Write-Host "Running Core Unit & Domain Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.core.util.*
-./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.domain.util.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.domain.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.worker.*
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Core Unit Tests Failed!" -ForegroundColor Red
+    Write-Host "Core/Domain Unit Tests Failed!" -ForegroundColor Red
     exit 1
 }
 
@@ -22,10 +22,11 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 3. Run ViewModel Tests
-Write-Host "Running ViewModel Tests..." -ForegroundColor Yellow
+# 3. Run ViewModel & UI State Tests
+Write-Host "Running ViewModel & UI State Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.creditcards.ui.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.income.ui.*
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ViewModel Tests Failed!" -ForegroundColor Red
     exit 1

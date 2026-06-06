@@ -7,8 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
+import com.karlvcrisostomo.financialmatrix.features.transactions.ui.SavingsDashboard
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionUiState
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
 import com.karlvcrisostomo.financialmatrix.ui.theme.SuccessGreen
@@ -24,13 +25,21 @@ import java.util.Locale
 @Composable
 fun IncomeScreen(
     viewModel: TransactionViewModel,
+    incomeViewModel: IncomeViewModel,
     modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val savingsUiState by incomeViewModel.savingsUiState.collectAsStateWithLifecycle()
     val currencySymbol = uiState.userPreferences.currencySymbol
     val totalIncome = uiState.totalIncome
 
     Column(modifier = modifier.fillMaxSize()) {
+        SavingsDashboard(
+            netSavings = savingsUiState.netSavings,
+            savingsRate = savingsUiState.savingsRate,
+            currencySymbol = currencySymbol
+        )
+
         // Income Dashboard
         Card(
             modifier = Modifier
@@ -48,12 +57,6 @@ fun IncomeScreen(
             }
         }
 
-        // We need a list of all income. Currently ViewModel only has total income.
-        // Let's assume we want to show all income entries eventually.
-        // For now, I'll just show the total or implement a basic list if I can get the data.
-        // Actually, TransactionViewModel has incomeRepository.getAllIncome() but doesn't expose the list in UI state yet.
-        // I should update TransactionUiState to include incomeList.
-        
         Text(
             text = "Income History",
             style = MaterialTheme.typography.titleMedium,

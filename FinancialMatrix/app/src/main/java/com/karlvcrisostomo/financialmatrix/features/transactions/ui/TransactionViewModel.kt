@@ -99,10 +99,6 @@ class TransactionViewModel(
             .filter { it.date.month == today.month && it.date.year == today.year }
             .sumOf { it.amount }
 
-        // 5. Compute Savings KPIs
-        val netSavings = totalIncome - totalSpent
-        val savingsRate = if (totalIncome > 0) (netSavings / totalIncome) * 100 else 0.0
-
         TransactionUiState(
             transactions = sortedList,
             incomeTransactions = incomeList,
@@ -114,8 +110,6 @@ class TransactionViewModel(
             totalIncome = totalIncome,
             cashSpent = cashSpent,
             creditSpent = creditSpent,
-            netSavings = netSavings,
-            savingsRate = savingsRate,
             categoryAmounts = categoryAmounts,
             availableCategories = standardCategories,
             isLoading = false
