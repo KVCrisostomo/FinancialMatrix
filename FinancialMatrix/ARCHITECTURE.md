@@ -13,7 +13,7 @@ The project adheres to **Clean Architecture** principles combined with the **MVV
 | :--- | :--- | :--- |
 | **Presentation** | Jetpack Compose, ViewModels, UI State | Rendering the UI, handling user interactions, and exposing reactive state streams. |
 | **Domain** | Sealed Models, Math Engines, Use Cases | Pure business logic, type-safe category definitions, and complex financial calculations. |
-| **Data** | Room DB, DAOs, DataStore, SAF | Persistence, local storage management, and raw system stream handling for exports. |
+| **Data** | Room DB, DAOs, DataStore | Persistence and local storage management. |
 
 ### 1.2 Data Flow Topography
 Data flows reactively from the local Room database to the UI using Kotlin `StateFlow`.
@@ -23,7 +23,7 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 - **UI (Compose):** Collects the `StateFlow` via `collectAsStateWithLifecycle()` to trigger recompositions.
 
 ### 1.3 Threading & Concurrency
-- **Dispatchers.IO:** Mandatory for all database transactions and File I/O (Exporting).
+- **Dispatchers.IO:** Mandatory for all database transactions.
 - **Dispatchers.Default:** Reserved for heavy arithmetic, filtering, and sorting within the ViewModels to keep the Main thread responsive.
 - **Main Thread:** Restricted to UI rendering and event handling only.
 
@@ -42,7 +42,6 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 ### 2.2 Data Layer (`com.karlvcrisostomo.financialmatrix.core`, `features.*.data`)
 - **`AppDatabase`:** Central Room instance managing Transactions, Income, and Credit Card entities.
 - **`UserPreferencesRepository`:** Manages app-wide settings (Currency, Budget Limits) via Jetpack DataStore.
-- **`ExportUtils`:** Manages Storage Access Framework (SAF) CSV output streams. Handles transactional array serialization to comma-separated format for file persistence.
 
 ### 2.3 Presentation Layer (`features.*.ui`)
 - **`TransactionViewModel`:** The primary reactive engine (conceptually `FinancialMatrixViewModel`). Applies `.isInternalTransfer()` filters and offloads analytics to `Dispatchers.Default`.
@@ -87,5 +86,4 @@ graph TD
     VM --> Repo[Repositories]
     Repo --> DB[Room Database]
     Repo --> DS[DataStore Preferences]
-    Repo --> SAF[Storage Access Framework]
 ```
