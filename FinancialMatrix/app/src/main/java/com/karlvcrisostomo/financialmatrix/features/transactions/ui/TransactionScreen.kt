@@ -61,7 +61,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.karlvcrisostomo.financialmatrix.R
-import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDialog
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardScreen
@@ -107,20 +106,6 @@ fun TransactionScreen(
     val showBudgetDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        uri?.let {
-            try {
-                context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    outputStream.write(uiState.transactions.toCsvString().toByteArray())
-                }
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
-    }
-
     val currencySymbol = uiState.userPreferences.currencySymbol
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -164,16 +149,6 @@ fun TransactionScreen(
                             selected = currentRoute == Screen.Settings.route,
                             onClick = {
                                 navController.navigate(Screen.Settings.route)
-                                scope.launch { drawerState.close() }
-                            },
-                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp, horizontal = 28.dp))
-                        NavigationDrawerItem(
-                            label = { Text("Export CSV") },
-                            selected = false,
-                            onClick = {
-                                exportLauncher.launch("ledger.csv")
                                 scope.launch { drawerState.close() }
                             },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
