@@ -12,20 +12,21 @@ The project adheres to **Clean Architecture** principles combined with the **MVV
 | Layer | Components | Responsibilities |
 | :--- | :--- | :--- |
 | **Presentation** | Jetpack Compose, ViewModels, UI State | Rendering the UI, handling user interactions, and exposing reactive state streams. |
-| **Domain** | Sealed Models, Math Engines, Use Cases | Pure business logic, type-safe category definitions, and complex financial calculations. |
+| **Domain** | Sealed Models, Math Engines, Use Cases | Pure business logic, type-safe category definitions, and complex financial calculations. **Mandatory:** Isolate validation logic (e.g., `ValidateTransactionSourceUseCase`) to prevent circular debt or invalid funding sources. |
 | **Data** | Room DB, DAOs, DataStore | Persistence and local storage management. |
 
 ### 1.2 Data Flow Topography
 Data flows reactively from the local Room database to the UI using Kotlin `StateFlow`.
-- **Database (Room):** Emits cold `Flow` streams from DAOs.
+- **Database (Room):** Emits cold `Flow` streams from DAOs. **Atomic Ledger Rule:** All multi-entity updates (e.g., inserting a transaction while updating a Credit Card balance) MUST be wrapped in a Room `@Transaction` block to ensure atomicity. If any part fails, the entire ledger adjustment must roll back.
 - **Repository:** Wraps DAOs and provides a clean API to the Domain/Presentation layers.
 - **ViewModel:** Consumes multiple repository flows, using combine to merge data into layout-specific states (e.g., TransactionUiState solely for row processing, and an isolated state stream for the `SavingsDashboard.kt` component within the income ledger context).
 - **UI (Compose):** Collects the `StateFlow` via `collectAsStateWithLifecycle()` to trigger recompositions.
 
 ### 1.3 Threading & Concurrency
 - **Dispatchers.IO:** Mandatory for all database transactions.
-- **Dispatchers.Default:** Reserved for heavy arithmetic, filtering, and sorting within the ViewModels to keep the Main thread responsive.
+- **Dispatchers.Default:** Reserved for heavy arithmetic (using `BigDecimal`), filtering, and sorting within the ViewModels to keep the Main thread responsive.
 - **Main Thread:** Restricted to UI rendering and event handling only.
+- **Financial Precision:** Prohibit the use of `Float` or `Double` for financial calculations. All currency values MUST be handled via `java.math.BigDecimal` to ensure absolute precision, mapped via Room `TypeConverters`.
 
 ### 1.4 Navigation Scaffolding
 - **Right-Side Navigation:** The `ModalNavigationDrawer` is anchored to and slides exclusively from the **Right edge** of the display.
@@ -69,9 +70,9 @@ graph TD
 - **Login Screen UI:** Solid `#0B1A30` Midnight Navy background with Premium Gold typography.
 
 ### 3.2 Non-Negotiable Quality Gates
-1. **100% Code Coverage Guardrail:** Asynchronous flows in ViewModels must be tested via `Turbine`. Calculations require exhaustive unit coverage.
+1. **100% Code Coverage Guardrail:** Asynchronous flows in ViewModels must be tested via `Turbine`. This specifically includes verifying multi-emission flow states during reactive ledger updates. Calculations require exhaustive unit coverage.
 2. **Zero-Warning Compilation Policy:** No lint warnings, layout errors, or deprecated `@Composable` usage.
-3. **Local Certification Suite:** Developers must achieve a green status via the automation tool before any Git commit:
+3. **Local Certification Suite:** Developers must achieve a green status via the automation tool before any Git commit. This suite includes Turbine flow validation and math engine precision checks:
    ```powershell
    ./certify_build.ps1
    ```
