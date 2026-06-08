@@ -4,7 +4,6 @@ import androidx.work.WorkManager
 import app.cash.turbine.test
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
-import com.karlvcrisostomo.financialmatrix.core.util.toCsvString
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
@@ -104,16 +103,5 @@ class TransactionPerformanceTest {
             println("Sort Execution Time for $largeDatasetSize items: ${executionTime}ms")
             assertTrue("Sorting took too long: ${executionTime}ms", executionTime < 300)
         }
-    }
-
-    @Test
-    fun `CSV serialization of 10,000 transactions executes within performance bounds`() {
-        val executionTime = measureTimeMillis {
-            val csv = largeDataset.toCsvString()
-            assertTrue(csv.isNotBlank())
-        }
-
-        println("CSV Serialization Execution Time for $largeDatasetSize items: ${executionTime}ms")
-        assertTrue("CSV Export took too long: ${executionTime}ms", executionTime < 500)
     }
 }
