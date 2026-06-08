@@ -35,6 +35,7 @@ class FinancialMatrixApplication : Application() {
             "financial_matrix_database",
         )
             .addMigrations(AppDatabase.MIGRATION_3_4)
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 
