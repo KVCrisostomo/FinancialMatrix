@@ -21,13 +21,13 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 3. Run ViewModel & UI State Tests
-Write-Host "Running ViewModel & UI State Tests..." -ForegroundColor Yellow
+# 3. Run ViewModel & UI State Tests (Turbine Flow Validation)
+Write-Host "Running ViewModel & UI State Tests (Turbine)..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.creditcards.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.income.ui.*
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "ViewModel Tests Failed!" -ForegroundColor Red
+    Write-Host "ViewModel/Turbine Flow Tests Failed!" -ForegroundColor Red
     exit 1
 }
 
