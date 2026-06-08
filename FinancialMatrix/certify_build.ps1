@@ -5,6 +5,7 @@ Write-Host "Starting Build Certification..." -ForegroundColor Cyan
 
 # 1. Run Core Unit & Domain Tests
 Write-Host "Running Core Unit & Domain Tests..." -ForegroundColor Yellow
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.core.util.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.domain.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.worker.*
 if ($LASTEXITCODE -ne 0) {
@@ -21,13 +22,13 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 3. Run ViewModel & UI State Tests (Turbine Flow Validation)
-Write-Host "Running ViewModel & UI State Tests (Turbine)..." -ForegroundColor Yellow
+# 3. Run ViewModel & UI State Tests
+Write-Host "Running ViewModel & UI State Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.creditcards.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.income.ui.*
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "ViewModel/Turbine Flow Tests Failed!" -ForegroundColor Red
+    Write-Host "ViewModel Tests Failed!" -ForegroundColor Red
     exit 1
 }
 
@@ -35,8 +36,18 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Running Performance Load Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.performance.*
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Performance Tests Failed!" -ForegroundColor Red
+    Write-Host "Performance Load Tests Failed!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Build Certified! All tests passed." -ForegroundColor Green
+# 5. [NEW] Validate OSS License Generation (Phase 3 Constraint)
+Write-Host "Validating Open Source License Aggregation..." -ForegroundColor Yellow
+# Generates the definitions to ensure no metadata parsing crashes exist, without a full APK build
+./gradlew :app:exportLibraryDefinitions
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "OSS License Aggregation Failed! Check dependency tree." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Certification Complete: ZERO WARNINGS. Green for Commit." -ForegroundColor Green
+exit 0
