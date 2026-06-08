@@ -17,7 +17,10 @@ The project adheres to **Clean Architecture** principles combined with the **MVV
 
 ### 1.2 Data Flow Topography
 Data flows reactively from the local Room database to the UI using Kotlin `StateFlow`.
-- **Database (Room):** Emits cold `Flow` streams from DAOs. **Atomic Ledger Rule:** All multi-entity updates (e.g., inserting a transaction while updating a Credit Card balance) MUST be wrapped in a Room `@Transaction` block to ensure atomicity. If any part fails, the entire ledger adjustment must roll back.
+- **Database (Room):** Emits cold `Flow` streams from DAOs.
+   * **Atomic Ledger Rule:** All multi-entity updates (e.g., inserting a transaction while updating a Credit Card balance) MUST be wrapped in a Room `@Transaction` block to ensure atomicity. If any part fails, the entire ledger adjustment must roll back.
+   * **Schema Versioning & Migration Rule:** Any modification to the database structural design (adding tables, altering columns, changing indices) MUST increment the database version and be paired with an explicit, hand-crafted Room `Migration` implementation.
+   * **Destructive Fallback Prohibition:** The use of `fallbackToDestructiveMigration()` is strictly prohibited across all tracking branches. Every schema shift must safely transform existing user records without data truncation or ledger zeroing.
 - **Repository:** Wraps DAOs and provides a clean API to the Domain/Presentation layers.
 - **ViewModel:** Consumes multiple repository flows, using combine to merge data into layout-specific states (e.g., TransactionUiState solely for row processing, and an isolated state stream for the `SavingsDashboard.kt` component within the income ledger context).
 - **UI (Compose):** Collects the `StateFlow` via `collectAsStateWithLifecycle()` to trigger recompositions.
@@ -49,6 +52,8 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 - **`TransactionScreen.kt`:** The main navigation host and global scaffold. Dedicates 100% of its vertical layout strictly to expense row processing (`SavingsDashboard.kt` is completely un-embedded).
 - **`CreditCardScreen.kt`:** High-volume vertical layout using `LazyColumn`. **Rule:** All card creation is routed through the main FAB; inline "+" header icons are prohibited.
 - **`IncomeScreen.kt`:** Dashboard for tracking monthly earnings. Features the structural `SavingsDashboard.kt` component permanently mounted in the top header area.
+- **`AboutScreen.kt`:** Provides the static informational route (`/about`). Displays application metadata, dynamic versioning via `BuildConfig.VERSION_NAME`, and handles navigation to the legal sub-route. Must utilize the standard application scaffold (Midnight Navy background) and rely entirely on localized strings. No business logic or state mutation is permitted.
+- **`OssLicensesScreen.kt`:** Automatically parses and renders Open Source Software (OSS) licenses using the native `aboutlibraries-compose-m3` dependency. This ensures a 100% Jetpack Compose and Material 3 architecture, completely prohibiting the use of legacy Android Activity hooks for compliance rendering.
 
 ---
 
