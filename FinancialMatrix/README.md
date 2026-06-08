@@ -1,54 +1,41 @@
-# Financial Matrix Ledger (FML)
+# Financial Matrix Ledger (FML) — Executive Product Overview
 
-Financial Matrix Ledger is a high-precision, premium personal finance tracking application built for Android. Adhering to the strict principles of **Clean Architecture** and **MVVM**, the app decouples data, business logic, and presentation to ensure 100% testability, rock-solid data integrity, and fluid 60 FPS performance.
+## Welcome to Financial Matrix Ledger
+The **Financial Matrix Ledger (FML)** is a premium, high-precision personal finance tracking application designed for Android. It bridges the gap between sophisticated wealth management and everyday usability, providing you with absolute clarity over your financial health without compromising on data privacy or speed.
 
----
-
-## 🚀 Core Functionalities
-
-* **Reactive Data Flow:** Built entirely on top of Kotlin `StateFlow`. Local database modifications instantly propagate upstream from Room DAOs to the Jetpack Compose UI layer.
-* **Precision Financial Math:** Eliminates floating-point inaccuracies by isolating currency calculations within pure domain math engines.
-* **KPI Exclusion Logic:** Features intelligent internal transfer identification (`.isInternalTransfer()`) to prevent artificial inflation of income or expense metrics.
-* **Defensive Statement Bounding:** Utilizes `TemporalAdjusters.lastDayOfMonth()` within the core domain logic to dynamically handle variable billing cycles (e.g., leap years, February ceilings).
-* **Secure Local Storage:** Data is 100% localized using Room DB, Jetpack DataStore for preferences, and the Android Storage Access Framework (SAF) for raw CSV transactional exports.
+Unlike traditional finance apps that process your data in the cloud, FML operates with a **100% local-first security model**. Your financial records never leave your device, ensuring complete confidentiality.
 
 ---
 
-## 🔒 Authentication & Entry Gate
+## 💎 Core Capabilities
 
-To ensure strict financial privacy, entry is blocked at boot-up until local authorization clears:
-1. **Pre-Auth Login Screen:** A premium `#0B1A30` Midnight Navy background with Gold typography requires a `PIN` or Biometric clearance.
-2. **Intermediate Layout:** Displays an elegant application emblem, app name, and Material 3 progress indicator while initializing systems.
-3. **Active Ledger:** Drops the user into the fully reactive dashboard hub.
-
----
-
-## 📱 Main Screens & Navigation
-
-The global interface features an ergonomic **Right-Side Navigation Drawer** (`ModalNavigationDrawer`). It is anchored to the top-right 3-bar menu icon, making one-handed dashboard switching highly intuitive.
-
-### 1. Expenses Ledger (`TransactionScreen.kt`)
-The primary system engine and navigation host. 
-* Displays a reactive stream of all debit transactions consolidated via `TransactionUiState`.
-* Offloads heavy calculation, sorting, and category filtering to `Dispatchers.Default` to guarantee UI thx`read responsiveness.
-
-### 2. Income Ledger (`IncomeScreen.kt`)
-A dedicated tracking space optimized for earnings, historical inputs, and financial growth analytics.
-* Monitors monthly baseline earnings and maps individual savings KPIs over time.
-
-### 3. Credit Cards (`CreditCardScreen.kt`)
-A high-volume vertical workspace utilizing an optimized Compose `LazyColumn` to handle multi-card balances.
-* **Strict Structural Rule:** All card creation configurations must route through the primary Floating Action Button (FAB). Inline "+" header icons are strictly prohibited to maintain layout uniformity.
-
-### 4. Settings (`UserPreferencesRepository`)
-Powered by Jetpack DataStore to store app-wide properties without database overhead.
-* Manages user-selected global currencies, budget thresholds, and local theme profiles.
+* **Instant Dashboard Updates:** The app utilizes a reactive data engine. The moment you log an expense, update an income stream, or adjust a credit card balance, your entire financial matrix updates instantly across all screens.
+* **True-Value Mathematical Accuracy:** Built with dedicated financial math engines, FML eliminates rounding errors common in standard digital spreadsheets. Every cent is accounted for with absolute precision.
+* **Intelligent Double-Counting Protection:** FML features built-in transaction intelligence that automatically recognizes internal transfers. For example, moving money from your savings account to pay off a credit card bill is correctly identified as a transfer, preventing your charts from falsely inflating your monthly spending or income metrics.
+* **Smart Billing Cycle Alignment:** The application dynamically adjusts to varying calendar months. It automatically accounts for shorter months (like February) and leap years, ensuring your credit card statement windows and budget boundaries remain accurate.
 
 ---
 
-## 🛠️ Developer Verification & Quality Gates
+## 🔒 Institutional-Grade Security & Privacy
 
-The project maintains a zero-tolerance policy for technical debt. Before any Git commit is allowed, engineers must run the local certification script:
+To protect your highly sensitive financial intelligence, FML enforces a strict, multi-stage entry gate every time the application boots up:
+1. **The Vault Login:** Access is blocked by a dedicated, premium login interface requiring your secure personal PIN or biometric authentication (Fingerprint/Face Unlock).
+2. **Secure Initialization:** While your local encrypted database safely loads, an elegant progress screen displays to ensure systems are fully prepared before rendering your financial data.
 
-```powershell
-./certify_build.ps1
+---
+
+## 📱 Seamless Navigation & Main Features
+
+FML features an ergonomic **Right-Side Navigation Menu**. Tapping the 3-bar menu icon in the top-right corner slides out your navigation hub, allowing you to fluidly shift between ledgers with a single thumb movement.
+
+### 💸 Expenses Ledger
+Your main financial dashboard and command center. It tracks every dollar going out, categorized beautifully to give you immediate insights into your spending habits. The interface is optimized to remain incredibly fluid and snappy, even if you track thousands of transactions over several years.
+
+### 💼 Income Ledger
+A dedicated command center for your cash flow. It maps out your active monthly earnings, passive income, and recurring revenue streams. It acts as a visual benchmark, measuring your real-time savings performance against your incoming revenue.
+
+### 💳 Credit Cards Manager
+A comprehensive vertical workspace designed to manage multiple credit cards simultaneously. You can monitor current balances, track individual card limits, and see clear billing windows. To maintain a clean visual hierarchy and prevent accidental inputs, all new cards are added through a single, distinct Action Button on the screen.
+
+### ⚙️ System Settings
+Your customization hub. Powered by high-speed local memory preferences, this section allows you to instantly change your global currency symbols, establish strict monthly budget safety thresholds, and manage your visual interface rules without experiencing application lag.
