@@ -286,19 +286,7 @@ fun TransactionScreen(
                             )
                         }
                         composable(Screen.OssLicenses.route) {
-                            // Placeholder for OssLicensesScreen
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MidnightNavy),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "OSS Licenses Screen Placeholder",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.headlineSmall
-                                )
-                            }
+                            OssLicensesScreen()
                         }
                     }
                 }
