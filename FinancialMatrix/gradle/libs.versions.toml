@@ -17,7 +17,7 @@ ksp = "2.3.6" # Adjust if your Kotlin version differs, but this is standard for 
 mockk = "1.14.11"
 turbine = "1.2.1"
 coroutinesTest = "1.11.0"
-aboutlibraries = "11.6.3"
+aboutlibraries = "14.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

@@ -71,4 +71,5 @@ dependencies {
     implementation(libs.room.ktx)       // Coroutines & Flow support for Room
     ksp(libs.room.compiler)            // KSP compiler for annotation processing
     implementation(libs.aboutlibraries.compose.m3)
+    implementation(libs.aboutlibraries.core)
 }
