@@ -282,7 +282,6 @@ fun TransactionScreen(
                         }
                         composable(Screen.About.route) {
                             AboutScreen(
-                                onNavigateBack = { navController.popBackStack() },
                                 onNavigateToOssLicenses = { navController.navigate(Screen.OssLicenses.route) }
                             )
                         }
@@ -411,7 +410,7 @@ fun LoadingScreen(onLoadingFinished: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = "App Logo",
                 modifier = Modifier.size(140.dp)
             )

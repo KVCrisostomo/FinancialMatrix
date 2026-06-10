@@ -22,8 +22,8 @@ class AboutScreenTest {
         composeTestRule.setContent {
             FinancialMatrixTheme {
                 AboutScreen(
-                    onNavigateBack = {},
-                    onNavigateToOssLicenses = { ossClicked = true }
+                    onNavigateToOssLicenses = { ossClicked = true },
+                    versionName = "1.0"
                 )
             }
         }
@@ -31,8 +31,8 @@ class AboutScreenTest {
         // Check if Title is displayed
         composeTestRule.onNodeWithText("Financial Matrix Ledger").assertIsDisplayed()
         
-        // Check if Version is displayed (using substring since version might change)
-        composeTestRule.onNodeWithText("Version", substring = true).assertIsDisplayed()
+        // Check if Version is displayed
+        composeTestRule.onNodeWithText("Version 1.0").assertIsDisplayed()
         
         // Check if Description is displayed
         composeTestRule.onNodeWithText("Financial Matrix Ledger (FML)", substring = true).assertIsDisplayed()
@@ -42,24 +42,5 @@ class AboutScreenTest {
         composeTestRule.onNodeWithText("Open Source Licenses").performClick()
         
         assert(ossClicked)
-    }
-
-    @Test
-    fun aboutScreen_backButton_triggersCallback() {
-        var backClicked = false
-        
-        composeTestRule.setContent {
-            FinancialMatrixTheme {
-                AboutScreen(
-                    onNavigateBack = { backClicked = true },
-                    onNavigateToOssLicenses = {}
-                )
-            }
-        }
-
-        // Click back button
-        composeTestRule.onNodeWithContentDescription("Navigate Back").performClick()
-        
-        assert(backClicked)
     }
 }
