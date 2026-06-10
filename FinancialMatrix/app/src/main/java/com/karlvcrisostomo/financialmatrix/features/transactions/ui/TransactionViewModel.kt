@@ -55,7 +55,9 @@ class TransactionViewModel(
         _searchQuery,
         preferencesRepository.userPreferencesFlow
     ) { flows ->
+        @Suppress("UNCHECKED_CAST")
         val transactionList = flows[0] as List<TransactionEntity>
+        @Suppress("UNCHECKED_CAST")
         val incomeList = flows[1] as List<IncomeEntity>
         val sortOrder = flows[2] as TransactionSortOrder
         val category = flows[3] as String?

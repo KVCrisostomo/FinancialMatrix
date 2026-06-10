@@ -40,14 +40,12 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 5. [NEW] Validate OSS License Generation (Phase 3 Constraint)
-Write-Host "Validating Open Source License Aggregation..." -ForegroundColor Yellow
-# Generates the definitions to ensure no metadata parsing crashes exist, without a full APK build
-./gradlew :app:exportLibraryDefinitions
+# 5. Run Open Source Software Dependency License Validation Gate
+Write-Host "Running Open Source Software License Asset Verification..." -ForegroundColor Yellow
+./gradlew app:exportLibraryDefinitions
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "OSS License Aggregation Failed! Check dependency tree." -ForegroundColor Red
+    Write-Host "OSS License Metadata Compilation Failed!" -ForegroundColor Red
     exit 1
 }
-
-Write-Host "Certification Complete: ZERO WARNINGS. Green for Commit." -ForegroundColor Green
+Write-Host "Build Certification Successful! Quality gates verified." -ForegroundColor Green
 exit 0

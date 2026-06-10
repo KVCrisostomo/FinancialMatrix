@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.aboutlibraries)
 }
 
 android {
@@ -69,4 +70,5 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)       // Coroutines & Flow support for Room
     ksp(libs.room.compiler)            // KSP compiler for annotation processing
+    implementation(libs.aboutlibraries.compose.m3)
 }
