@@ -20,6 +20,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -30,19 +31,19 @@ class CreditCardViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private val mockCards = listOf(
-        CreditCardEntity(1, "Visa Gold", 15, 20, 50000.0)
+        CreditCardEntity(1, "Visa Gold", 15, 20, BigDecimal("50000.0"), BigDecimal("3000.0"))
     )
 
     // Setup transactions for June 1st calculation
     private val mockTransactions = listOf(
         // In June billing window (May 16 - June 15)
-        TransactionEntity(1, "Store A", 1000.0, LocalDate.of(2026, 6, 1), "Other", true, "Visa Gold"),
+        TransactionEntity(1, "Store A", BigDecimal("1000.0"), LocalDate.of(2026, 6, 1), "Other", true, "Visa Gold"),
         // In previous window (April 16 - May 15)
-        TransactionEntity(2, "Store B", 2000.0, LocalDate.of(2026, 5, 1), "Other", true, "Visa Gold"),
+        TransactionEntity(2, "Store B", BigDecimal("2000.0"), LocalDate.of(2026, 5, 1), "Other", true, "Visa Gold"),
         // Not a credit card
-        TransactionEntity(3, "Store C", 500.0, LocalDate.of(2026, 6, 1), "Other", false, "Visa Gold"),
+        TransactionEntity(3, "Store C", BigDecimal("500.0"), LocalDate.of(2026, 6, 1), "Other", false, "Visa Gold"),
         // Different account
-        TransactionEntity(4, "Store D", 300.0, LocalDate.of(2026, 6, 1), "Other", true, "Mastercard")
+        TransactionEntity(4, "Store D", BigDecimal("300.0"), LocalDate.of(2026, 6, 1), "Other", true, "Mastercard")
     )
 
     @Before
@@ -69,7 +70,7 @@ class CreditCardViewModelTest {
             val stats = state.cards[0]
             
             assertEquals("Visa Gold", stats.card.name)
-            // Total current balance for Visa Gold (1000 + 2000 = 3000)
+            // Total current balance for Visa Gold (stored in card entity)
             assertEquals(3000.0, stats.currentBalance, 0.0)
             // Statement balance for last period (April 16 - May 15) contains 2000.0
             assertEquals(2000.0, stats.statementBalance, 0.0)
@@ -81,7 +82,7 @@ class CreditCardViewModelTest {
     @Test
     fun `addCard calls repository`() = runTest {
         val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
-        val newCard = CreditCardEntity(0, "New Card", 1, 20, 10000.0)
+        val newCard = CreditCardEntity(0, "New Card", 1, 20, BigDecimal("10000.0"), BigDecimal.ZERO)
 
         viewModel.addCard(newCard)
         testDispatcher.scheduler.advanceUntilIdle()

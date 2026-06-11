@@ -2,6 +2,7 @@ package com.karlvcrisostomo.financialmatrix.features.transactions.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.math.BigDecimal
 import java.time.LocalDate
 
 enum class RecurringFrequency {
@@ -14,7 +15,7 @@ enum class RecurringFrequency {
 data class RecurringTransactionEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val description: String,
-    val amount: Double,
+    val amount: BigDecimal,
     val category: String,
     val isCreditCard: Boolean,
     val accountName: String,

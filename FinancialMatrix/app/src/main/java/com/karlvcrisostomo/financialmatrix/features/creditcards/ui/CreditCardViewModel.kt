@@ -8,15 +8,17 @@ import com.karlvcrisostomo.financialmatrix.FinancialMatrixApplication
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
-import kotlinx.coroutines.flow.SharingStarted
+import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.domain.util.StatementCycleCalculator
-import kotlinx.coroutines.Dispatchers
+import com.karlvcrisostomo.financialmatrix.domain.model.TransactionCategory
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 class CreditCardViewModel(
@@ -47,7 +49,7 @@ class CreditCardViewModel(
 
     private fun calculateStats(
         card: CreditCardEntity,
-        transactions: List<com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity>,
+        transactions: List<TransactionEntity>,
         today: LocalDate
     ): CreditCardStats {
         val (statementWindowStart, statementWindowEnd) = StatementCycleCalculator.calculatePreviousStatementWindow(
@@ -56,25 +58,33 @@ class CreditCardViewModel(
         )
 
         // Filter transactions for this specific card
-        // Note: Currently TransactionEntity has accountName, we might need to match by card name
         val cardTransactions = transactions.filter { it.isCreditCard && it.accountName == card.name }
 
+        // Statement balance is the sum of transactions in the previous statement window
         val statementBalance = cardTransactions
             .filter { it.date in statementWindowStart..statementWindowEnd }
-            .sumOf { it.amount }
+            .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
 
-        val currentBalance = cardTransactions.sumOf { it.amount }
-        val remainingLimit = card.creditLimit - currentBalance
-        val utilization = if (card.creditLimit > 0) (currentBalance / card.creditLimit * 100) else 0.0
+        // Current balance is stored in the entity and updated via atomic payments
+        // However, to keep it consistent with existing non-payment transactions, 
+        // we use the stored balance which should represent (all expenses - all payments).
+        val currentBalance = card.balance
+        val remainingLimit = card.creditLimit.subtract(currentBalance)
+        val utilization = if (card.creditLimit > BigDecimal.ZERO) {
+            currentBalance.divide(card.creditLimit, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal("100"))
+        } else {
+            BigDecimal.ZERO
+        }
 
         return CreditCardStats(
             card = card,
             statementWindowStart = statementWindowStart,
             statementWindowEnd = statementWindowEnd,
-            statementBalance = statementBalance,
-            currentBalance = currentBalance,
-            remainingLimit = remainingLimit,
-            utilizationPercentage = utilization
+            statementBalance = statementBalance.toDouble(),
+            currentBalance = currentBalance.toDouble(),
+            remainingLimit = remainingLimit.toDouble(),
+            utilizationPercentage = utilization.toDouble()
         )
     }
 

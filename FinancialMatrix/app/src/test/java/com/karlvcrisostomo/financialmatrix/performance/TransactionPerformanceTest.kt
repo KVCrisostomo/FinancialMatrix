@@ -10,6 +10,7 @@ import com.karlvcrisostomo.financialmatrix.features.transactions.data.Transactio
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionSortOrder
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
+import com.karlvcrisostomo.financialmatrix.domain.usecase.ValidateTransactionSourceUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,7 @@ import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
@@ -42,7 +44,7 @@ class TransactionPerformanceTest {
         TransactionEntity(
             id = i.toLong(),
             description = "Transaction $i",
-            amount = (1..1000).random().toDouble(),
+            amount = BigDecimal((1..1000).random().toString()),
             date = LocalDate.now().minusDays((0..365).random().toLong()),
             category = listOf("Food", "Utilities", "Transport", "Entertainment", "Other").random(),
             isCreditCard = (0..1).random() == 1,
@@ -68,7 +70,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `search and filter on 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Initial loading
@@ -88,7 +90,7 @@ class TransactionPerformanceTest {
 
     @Test
     fun `sorting 10,000 transactions executes within performance bounds`() = runTest {
-        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, testDispatcher)
+        val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
 
         viewModel.uiState.test {
             awaitItem() // Initial loading

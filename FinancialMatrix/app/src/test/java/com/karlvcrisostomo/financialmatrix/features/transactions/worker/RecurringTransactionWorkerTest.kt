@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 import java.time.LocalDate
 
 class RecurringTransactionWorkerTest {
@@ -34,7 +35,6 @@ class RecurringTransactionWorkerTest {
         transRepo = mockk(relaxed = true)
 
         // Mock applicationContext to return our mocked app instance
-        // This is where the ClassCastException happens if the mock isn't handled correctly by the runtime
         every { context.applicationContext } returns app
         
         every { app.recurringTransactionRepository } returns recurringRepo
@@ -47,7 +47,7 @@ class RecurringTransactionWorkerTest {
         val recurring = RecurringTransactionEntity(
             id = 1,
             description = "Netflix",
-            amount = 549.0,
+            amount = BigDecimal("549.0"),
             category = "Entertainment",
             isCreditCard = true,
             accountName = "Visa",

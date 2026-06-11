@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
+import java.math.BigDecimal
 
 @Composable
 fun CreditCardDialog(
@@ -32,12 +33,12 @@ fun CreditCardDialog(
 
     val billingDay = billingDayText.toIntOrNull() ?: 0
     val daysAfterBilling = daysAfterBillingText.toIntOrNull() ?: 0
-    val limit = limitText.toDoubleOrNull() ?: 0.0
+    val limit = limitText.toBigDecimalOrNull() ?: BigDecimal.ZERO
 
     val isInputValid = name.isNotBlank() && 
             billingDay in 1..31 && 
             daysAfterBilling >= 0 && 
-            limit > 0.0
+            limit > BigDecimal.ZERO
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -85,7 +86,8 @@ fun CreditCardDialog(
                             name = name,
                             billingDay = billingDay,
                             daysAfterBillingDate = daysAfterBilling,
-                            creditLimit = limit
+                            creditLimit = limit,
+                            balance = card?.balance ?: BigDecimal.ZERO
                         )
                     )
                 },

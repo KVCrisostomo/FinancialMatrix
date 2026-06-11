@@ -19,6 +19,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -29,15 +30,15 @@ class IncomeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private val mockTransactions = listOf(
-        TransactionEntity(1, "Jollibee", 200.0, LocalDate.now(), "Food", true, "Primary"),
-        TransactionEntity(2, "Electric Bill", 1500.0, LocalDate.now(), "Utilities", false, "Primary"),
-        TransactionEntity(3, "Credit Card Payment", 1000.0, LocalDate.now(), "CC Payment", false, "Primary")
+        TransactionEntity(1, "Jollibee", BigDecimal("200.0"), LocalDate.now(), "Food", true, "Primary"),
+        TransactionEntity(2, "Electric Bill", BigDecimal("1500.0"), LocalDate.now(), "Utilities", false, "Primary"),
+        TransactionEntity(3, "Credit Card Payment", BigDecimal("1000.0"), LocalDate.now(), "CC Payment", false, "Primary")
     )
 
     private val mockIncome = listOf(
-        IncomeEntity(1, "Salary", 5000.0, LocalDate.now()),
-        IncomeEntity(2, "Freelance", 1200.0, LocalDate.now()),
-        IncomeEntity(3, "Old Job", 1000.0, LocalDate.now().minusMonths(2))
+        IncomeEntity(1, "Salary", BigDecimal("5000.0"), LocalDate.now()),
+        IncomeEntity(2, "Freelance", BigDecimal("1200.0"), LocalDate.now()),
+        IncomeEntity(3, "Old Job", BigDecimal("1000.0"), LocalDate.now().minusMonths(2))
     )
 
     @Before

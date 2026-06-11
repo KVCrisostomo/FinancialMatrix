@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 class IncomeViewModel(
     private val transactionRepository: TransactionRepository,
@@ -35,20 +37,24 @@ class IncomeViewModel(
             it.date.year == today.year && 
             !TransactionCategory.from(it.category).isInternalTransfer()
         }
-        val totalSpent = monthlyTransactions.sumOf { it.amount }
+        val totalSpent = monthlyTransactions.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
 
         val monthlyIncome = income.filter { 
             it.date.month == today.month && 
             it.date.year == today.year 
         }
-        val totalIncome = monthlyIncome.sumOf { it.amount }
+        val totalIncome = monthlyIncome.fold(BigDecimal.ZERO) { acc, i -> acc.add(i.amount) }
 
-        val netSavings = totalIncome - totalSpent
-        val savingsRate = if (totalIncome > 0) (netSavings / totalIncome) * 100 else 0.0
+        val netSavings = totalIncome.subtract(totalSpent)
+        val savingsRate = if (totalIncome > BigDecimal.ZERO) {
+            netSavings.divide(totalIncome, 4, RoundingMode.HALF_UP).multiply(BigDecimal("100"))
+        } else {
+            BigDecimal.ZERO
+        }
 
         SavingsUiState(
-            netSavings = netSavings,
-            savingsRate = savingsRate,
+            netSavings = netSavings.toDouble(),
+            savingsRate = savingsRate.toDouble(),
             isLoading = false
         )
     }
