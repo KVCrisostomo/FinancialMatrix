@@ -33,7 +33,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,10 +43,9 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardVie
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionScreen
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionViewModel
 import com.karlvcrisostomo.financialmatrix.ui.theme.FinancialMatrixTheme
+import com.karlvcrisostomo.financialmatrix.ui.theme.LightGold
 import com.karlvcrisostomo.financialmatrix.ui.theme.MidnightNavy
 import com.karlvcrisostomo.financialmatrix.ui.theme.PremiumGold
-import com.karlvcrisostomo.financialmatrix.ui.theme.LightGold
-import kotlinx.coroutines.delay
 
 class MainActivity : FragmentActivity() {
 
@@ -69,13 +67,14 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Trigger initial authentication
-        attemptAuthentication()
-
         setContent {
             FinancialMatrixTheme {
                 val ccUiState by creditCardViewModel.uiState.collectAsState()
                 
+                LaunchedEffect(Unit) {
+                    attemptAuthentication()
+                }
+
                 LaunchedEffect(ccUiState) {
                     Log.d("CC_DEBUG", "ccUiState: isLoading=${ccUiState.isLoading}, cardsCount=${ccUiState.cards.size}, error=${ccUiState.errorMessage}")
                 }
@@ -134,7 +133,7 @@ fun UnlockLedgerScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+            painter = painterResource(id = R.drawable.ic_launcher_foreground),
             contentDescription = "App Logo",
             modifier = Modifier.size(120.dp)
         )

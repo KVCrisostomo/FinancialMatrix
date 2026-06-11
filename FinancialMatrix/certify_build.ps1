@@ -5,6 +5,7 @@ Write-Host "Starting Build Certification..." -ForegroundColor Cyan
 
 # 1. Run Core Unit & Domain Tests
 Write-Host "Running Core Unit & Domain Tests..." -ForegroundColor Yellow
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.core.util.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.domain.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.worker.*
 if ($LASTEXITCODE -ne 0) {
@@ -35,8 +36,16 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Running Performance Load Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.performance.*
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Performance Tests Failed!" -ForegroundColor Red
+    Write-Host "Performance Load Tests Failed!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Build Certified! All tests passed." -ForegroundColor Green
+# 5. Run Open Source Software Dependency License Validation Gate
+Write-Host "Running Open Source Software License Asset Verification..." -ForegroundColor Yellow
+./gradlew app:exportLibraryDefinitions
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "OSS License Metadata Compilation Failed!" -ForegroundColor Red
+    exit 1
+}
+Write-Host "Build Certification Successful! Quality gates verified." -ForegroundColor Green
+exit 0

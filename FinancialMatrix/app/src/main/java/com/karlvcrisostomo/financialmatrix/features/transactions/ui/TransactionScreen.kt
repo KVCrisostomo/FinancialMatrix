@@ -1,7 +1,5 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -16,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -79,6 +79,8 @@ sealed class Screen(val route: String, val title: String) {
     object Income : Screen("income", "Income Ledger")
     object CreditCards : Screen("credit_cards", "Credit Cards")
     object Settings : Screen("settings", "Settings")
+    object About : Screen("about", "About")
+    object OssLicenses : Screen("oss_licenses", "Open Source Licenses")
     object Loading : Screen("loading", "Initializing...")
 }
 
@@ -153,6 +155,20 @@ fun TransactionScreen(
                             },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                        NavigationDrawerItem(
+                            label = { Text(Screen.About.title) },
+                            icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                            selected = currentRoute == Screen.About.route,
+                            onClick = {
+                                navController.navigate(Screen.About.route)
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
                     }
                 }
             },
@@ -170,6 +186,7 @@ fun TransactionScreen(
                                             Screen.Income.route -> Screen.Income.title
                                             Screen.CreditCards.route -> Screen.CreditCards.title
                                             Screen.Settings.route -> Screen.Settings.title
+                                            Screen.About.route -> Screen.About.title
                                             else -> "Financial Matrix"
                                         }
                                     )
@@ -262,6 +279,14 @@ fun TransactionScreen(
                                     Text("Manage Recurring Transactions")
                                 }
                             }
+                        }
+                        composable(Screen.About.route) {
+                            AboutScreen(
+                                onNavigateToOssLicenses = { navController.navigate(Screen.OssLicenses.route) }
+                            )
+                        }
+                        composable(Screen.OssLicenses.route) {
+                            OssLicensesScreen()
                         }
                     }
                 }
@@ -373,7 +398,7 @@ fun LoadingScreen(onLoadingFinished: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = "App Logo",
                 modifier = Modifier.size(140.dp)
             )
