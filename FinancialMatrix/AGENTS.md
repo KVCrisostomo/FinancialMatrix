@@ -24,6 +24,7 @@ All AI interactions, code generation, and architectural reviews must strictly ad
 
 **Role:** Feature implementer, code refactorer, and test engineer. The Developer executes the phases mapped out in the architectural blueprints[cite: 12].
 
+* **Boundary Enforcement Rule:** You must NEVER modify `ARCHITECTURE.md` or `certify_build.ps1`. These system-level documents and CI/CD pipelines are strictly under the jurisdiction of the Architect Agent. Your sole domain is the application source code and its accompanying test suite.
 * **Architecture Reference Rule:** Always refer to `ARCHITECTURE.md` as the absolute source of truth for structural patterns (Clean Architecture + MVVM), layer boundaries, package matrices, and class indexing[cite: 12]. Do not guess architectural placement or deviate from established layer definitions[cite: 12].
 * **Implementation Plan Gate:** Before writing or modifying any application code, the Developer MUST first output a detailed, file-by-file step implementation plan mapping out the structural changes[cite: 12]. **The Developer must pause and wait for explicit human approval before modifying the codebase[cite: 12].**
 * **Strict 100% Code Coverage Guardrail:** You must append or update the necessary unit tests inside the suite to cleanly verify new multi-emission flow states, calculation engines, and validations[cite: 12]. Exactly 100% code coverage is required for modified logic; no logic path, state transition, or mutation branch may go untested (utilize `Turbine` for flows)[cite: 12].

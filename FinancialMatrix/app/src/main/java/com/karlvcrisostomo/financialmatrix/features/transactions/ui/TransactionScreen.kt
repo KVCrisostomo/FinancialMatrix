@@ -48,7 +48,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -101,6 +100,15 @@ fun TransactionScreen(
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showAddDialog = remember { mutableStateOf(false) }
+
+    // Collect one-time events from ViewModel
+    LaunchedEffect(viewModel.actionEvents) {
+        viewModel.actionEvents.collect { action ->
+            if (action is TransactionAction.TransactionSaved) {
+                showAddDialog.value = false
+            }
+        }
+    }
     val showAddIncomeDialog = remember { mutableStateOf(false) }
     val showAddCardDialog = remember { mutableStateOf(false) }
     val showRecurringDialog = remember { mutableStateOf(false) }
@@ -306,11 +314,14 @@ fun TransactionScreen(
         AddTransactionDialog(
             initialIsCreditCard = uiState.userPreferences.defaultIsCreditCard,
             currencySymbol = currencySymbol,
-            availableCards = ccUiState.cards.map { it.card.name },
-            onDismiss = { showAddDialog.value = false },
+            availableCards = ccUiState.cards.map { it.card },
+            errorMessage = uiState.errorMessage,
+            onDismiss = { 
+                showAddDialog.value = false 
+                viewModel.clearError()
+            },
             onSave = { newTransaction ->
                 viewModel.addTransaction(newTransaction)
-                showAddDialog.value = false
             }
         )
     }

@@ -40,7 +40,32 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 5. Run Open Source Software Dependency License Validation Gate
+# 5. Architectural Integrity Gate (Static Analysis)
+Write-Host "Running Architectural Integrity Checks..." -ForegroundColor Yellow
+
+# 5.1 Enforce BigDecimal for Financial Entities
+$violation = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Filter "*Entity.kt" -Recurse | Select-String -Pattern "Double", "Float"
+if ($violation) {
+    Write-Host "Architectural Violation: Double or Float detected in Financial Entities!" -ForegroundColor Red
+    $violation | ForEach-Object { Write-Host "  $($_.Path):$($_.LineNumber) - $($_.Line)" }
+    exit 1
+}
+
+# 5.2 Enforce Turbine for Asynchronous Flow Testing
+$testFiles = Get-ChildItem -Path "app/src/test/java/com/karlvcrisostomo/financialmatrix" -Filter "*Test.kt" -Recurse
+$missingTurbine = $true
+foreach ($file in $testFiles) {
+    if (Select-String -Path $file.FullName -Pattern "app.cash.turbine") {
+        $missingTurbine = $false
+        break
+    }
+}
+if ($missingTurbine) {
+    Write-Host "Quality Gate Failure: Turbine library usage not detected in test suite!" -ForegroundColor Red
+    exit 1
+}
+
+# 6. Run Open Source Software Dependency License Validation Gate
 Write-Host "Running Open Source Software License Asset Verification..." -ForegroundColor Yellow
 ./gradlew app:exportLibraryDefinitions
 if ($LASTEXITCODE -ne 0) {

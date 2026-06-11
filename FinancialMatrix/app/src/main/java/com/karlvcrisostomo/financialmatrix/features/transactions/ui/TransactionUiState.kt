@@ -36,3 +36,7 @@ data class TransactionUiState(
     val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null
 )
+
+sealed class TransactionAction {
+    data object TransactionSaved : TransactionAction()
+}

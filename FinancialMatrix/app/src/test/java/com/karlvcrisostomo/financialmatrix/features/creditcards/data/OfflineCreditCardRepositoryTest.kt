@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 
 class OfflineCreditCardRepositoryTest {
 
@@ -24,8 +25,8 @@ class OfflineCreditCardRepositoryTest {
     fun `getAllCards returns flow from DAO`() = runTest {
         // Arrange
         val expectedCards = listOf(
-            CreditCardEntity(1, "Visa Gold", 15, 5, 50000.0),
-            CreditCardEntity(2, "Mastercard Silver", 20, 10, 30000.0)
+            CreditCardEntity(1, "Visa Gold", 15, 5, BigDecimal("50000.0"), BigDecimal.ZERO),
+            CreditCardEntity(2, "Mastercard Silver", 20, 10, BigDecimal("30000.0"), BigDecimal.ZERO)
         )
         every { creditCardDao.getAllCards() } returns flowOf(expectedCards)
 
@@ -42,7 +43,7 @@ class OfflineCreditCardRepositoryTest {
     @Test
     fun `insertCard calls DAO insert`() = runTest {
         // Arrange
-        val card = CreditCardEntity(1, "Visa Gold", 15, 5, 50000.0)
+        val card = CreditCardEntity(1, "Visa Gold", 15, 5, BigDecimal("50000.0"), BigDecimal.ZERO)
         coEvery { creditCardDao.insertCard(card) } returns Unit
 
         // Act
@@ -55,7 +56,7 @@ class OfflineCreditCardRepositoryTest {
     @Test
     fun `deleteCard calls DAO delete`() = runTest {
         // Arrange
-        val card = CreditCardEntity(1, "Visa Gold", 15, 5, 50000.0)
+        val card = CreditCardEntity(1, "Visa Gold", 15, 5, BigDecimal("50000.0"), BigDecimal.ZERO)
         coEvery { creditCardDao.deleteCard(card) } returns Unit
 
         // Act

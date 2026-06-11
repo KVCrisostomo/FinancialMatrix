@@ -44,6 +44,7 @@ import com.karlvcrisostomo.financialmatrix.core.util.formatToHumanReadable
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringFrequency
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionEntity
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Locale
 
@@ -161,7 +162,7 @@ fun AddRecurringRuleDialog(
 
     val parsedStartDate = try { LocalDate.parse(startDateText) } catch (e: Exception) { null }
     val isInputValid = description.isNotBlank() && 
-            amountText.toDoubleOrNull() != null && 
+            amountText.toBigDecimalOrNull() != null && 
             parsedStartDate != null
 
     AlertDialog(
@@ -266,7 +267,7 @@ fun AddRecurringRuleDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val amount = amountText.toDoubleOrNull() ?: 0.0
+                    val amount = amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     onSave(
                         RecurringTransactionEntity(
                             description = description,

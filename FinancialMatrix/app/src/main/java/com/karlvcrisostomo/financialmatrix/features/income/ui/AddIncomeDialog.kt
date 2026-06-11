@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Composable
@@ -30,7 +31,7 @@ fun AddIncomeDialog(
     var amountText by remember { mutableStateOf("") }
 
     val isAmountValid = remember(amountText) {
-        amountText.toDoubleOrNull()?.let { it > 0.0 } ?: false
+        amountText.toBigDecimalOrNull()?.let { it > BigDecimal.ZERO } ?: false
     }
     val isDescriptionValid = remember(description) {
         description.isNotBlank()
@@ -67,7 +68,7 @@ fun AddIncomeDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val finalAmount = amountText.toDoubleOrNull() ?: 0.0
+                    val finalAmount = amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     val newIncome = IncomeEntity(
                         description = description,
                         amount = finalAmount,

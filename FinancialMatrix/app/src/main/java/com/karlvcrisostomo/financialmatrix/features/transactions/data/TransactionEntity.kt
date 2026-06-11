@@ -2,15 +2,17 @@ package com.karlvcrisostomo.financialmatrix.features.transactions.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Entity(tableName = "transactions")
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val description: String,
-    val amount: Double,
+    val amount: BigDecimal,
     val date: LocalDate,
     val category: String,
     val isCreditCard: Boolean,
-    val accountName: String
+    val accountName: String,
+    val targetCreditCardId: Long? = null
 )

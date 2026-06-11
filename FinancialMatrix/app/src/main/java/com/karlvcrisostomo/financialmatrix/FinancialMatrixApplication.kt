@@ -34,7 +34,7 @@ class FinancialMatrixApplication : Application() {
             AppDatabase::class.java,
             "financial_matrix_database",
         )
-            .addMigrations(AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_5_6)
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
     }

@@ -9,23 +9,28 @@ import androidx.work.WorkManager
 import com.karlvcrisostomo.financialmatrix.FinancialMatrixApplication
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
 import com.karlvcrisostomo.financialmatrix.core.worker.BudgetMonitorWorker
+import com.karlvcrisostomo.financialmatrix.domain.model.TransactionCategory
+import com.karlvcrisostomo.financialmatrix.domain.usecase.InvalidFundingSourceException
+import com.karlvcrisostomo.financialmatrix.domain.usecase.ValidateTransactionSourceUseCase
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionRepository
-import com.karlvcrisostomo.financialmatrix.domain.model.TransactionCategory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 class TransactionViewModel(
     private val repository: TransactionRepository,
@@ -33,13 +38,18 @@ class TransactionViewModel(
     private val recurringRepository: RecurringTransactionRepository,
     private val preferencesRepository: UserPreferencesRepository,
     private val workManager: WorkManager,
+    private val validateSourceUseCase: ValidateTransactionSourceUseCase = ValidateTransactionSourceUseCase(),
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val _sortOrder = MutableStateFlow(TransactionSortOrder.LATEST)
     private val _selectedCategory = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
+    private val _errorMessage = MutableStateFlow<String?>(null)
     
+    private val _actionEvents = MutableSharedFlow<TransactionAction>()
+    val actionEvents = _actionEvents.asSharedFlow()
+
     private val standardCategories = TransactionCategory.getAllStandard().map { it.displayName }
 
     val recurringTransactions: StateFlow<List<RecurringTransactionEntity>> = 
@@ -53,6 +63,7 @@ class TransactionViewModel(
         _sortOrder,
         _selectedCategory,
         _searchQuery,
+        _errorMessage,
         preferencesRepository.userPreferencesFlow
     ) { flows ->
         @Suppress("UNCHECKED_CAST")
@@ -62,7 +73,8 @@ class TransactionViewModel(
         val sortOrder = flows[2] as TransactionSortOrder
         val category = flows[3] as String?
         val query = flows[4] as String
-        val preferences = flows[5] as com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
+        val errorMessage = flows[5] as String?
+        val preferences = flows[6] as com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 
         // 1. Apply Filtering
         val filteredList = transactionList
@@ -81,7 +93,7 @@ class TransactionViewModel(
             TransactionSortOrder.LOWEST_AMOUNT -> filteredList.sortedBy { it.amount }
         }
 
-        // 3. Compute Analytics (Excluding internal transfers like CC Payment from spending totals)
+        // 3. Compute Analytics
         val today = java.time.LocalDate.now()
         val monthlyTransactions = transactionList.filter { 
             it.date.month == today.month && 
@@ -89,17 +101,17 @@ class TransactionViewModel(
             !TransactionCategory.from(it.category).isInternalTransfer()
         }
         
-        val totalSpent = monthlyTransactions.sumOf { it.amount }
-        val cashSpent = monthlyTransactions.filter { !it.isCreditCard }.sumOf { it.amount }
-        val creditSpent = monthlyTransactions.filter { it.isCreditCard }.sumOf { it.amount }
+        val totalSpent = monthlyTransactions.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
+        val cashSpent = monthlyTransactions.filter { !it.isCreditCard }.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
+        val creditSpent = monthlyTransactions.filter { it.isCreditCard }.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
         
         val categoryAmounts = monthlyTransactions.groupBy { it.category }
-            .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
+            .mapValues { (_, transactions) -> transactions.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) } }
 
         // 4. Compute Monthly Income
         val totalIncome = incomeList
             .filter { it.date.month == today.month && it.date.year == today.year }
-            .sumOf { it.amount }
+            .fold(BigDecimal.ZERO) { acc, i -> acc.add(i.amount) }
 
         TransactionUiState(
             transactions = sortedList,
@@ -108,22 +120,23 @@ class TransactionViewModel(
             selectedCategory = category,
             searchQuery = query,
             userPreferences = preferences,
-            totalSpent = totalSpent,
-            totalIncome = totalIncome,
-            cashSpent = cashSpent,
-            creditSpent = creditSpent,
-            categoryAmounts = categoryAmounts,
+            totalSpent = totalSpent.toDouble(),
+            totalIncome = totalIncome.toDouble(),
+            cashSpent = cashSpent.toDouble(),
+            creditSpent = creditSpent.toDouble(),
+            categoryAmounts = categoryAmounts.mapValues { it.value.toDouble() },
             availableCategories = standardCategories,
-            isLoading = false
+            isLoading = false,
+            errorMessage = errorMessage
         )
     }
-    .flowOn(defaultDispatcher) // Offload heavy processing from Main thread
+    .flowOn(defaultDispatcher)
     .catch { exception ->
         emit(TransactionUiState(errorMessage = exception.message, isLoading = false))
     }
     .stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Resource-efficient lifecycle management
+        started = SharingStarted.WhileSubscribed(5000),
         initialValue = TransactionUiState(isLoading = true)
     )
 
@@ -138,6 +151,10 @@ class TransactionViewModel(
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
     }
 
     fun toggleDefaultPaymentMethod() {
@@ -162,8 +179,35 @@ class TransactionViewModel(
 
     fun addTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
-            repository.insertTransaction(transaction)
-            triggerBudgetCheck()
+            try {
+                // 1. Validate the funding source
+                validateSourceUseCase(transaction.category, transaction.isCreditCard)
+                
+                // 2. Route based on transaction type and payment method
+                val category = TransactionCategory.from(transaction.category)
+                when {
+                    // Credit Card Payment: Decreases CC balance
+                    category is TransactionCategory.CreditCardPayment && transaction.targetCreditCardId != null -> {
+                        repository.insertCreditCardPayment(transaction, transaction.targetCreditCardId)
+                    }
+                    // Expense paid with CC: Increases CC balance (liability)
+                    transaction.isCreditCard && category !is TransactionCategory.CreditCardPayment && transaction.targetCreditCardId != null -> {
+                        repository.insertExpenseWithBalanceUpdate(transaction, transaction.targetCreditCardId)
+                    }
+                    // Standard expense (Cash/Primary): Just record it
+                    else -> {
+                        repository.insertTransaction(transaction)
+                    }
+                }
+                
+                _errorMessage.value = null
+                triggerBudgetCheck()
+                _actionEvents.emit(TransactionAction.TransactionSaved)
+            } catch (e: InvalidFundingSourceException) {
+                _errorMessage.value = e.message
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to save transaction: ${e.message}"
+            }
         }
     }
 
@@ -198,16 +242,19 @@ class TransactionViewModel(
 
     fun deleteTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
-            repository.deleteTransaction(transaction)
+            val category = TransactionCategory.from(transaction.category)
+            if (transaction.isCreditCard || category is TransactionCategory.CreditCardPayment) {
+                repository.deleteTransactionWithBalanceUpdate(transaction)
+            } else {
+                repository.deleteTransaction(transaction)
+            }
         }
     }
 
-    // Factory companion object to instantiate the ViewModel with its required dependencies
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                // Fetch the Application instance from CreationExtras
                 val application = extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as FinancialMatrixApplication
                 return TransactionViewModel(
                     application.transactionRepository,
@@ -215,6 +262,7 @@ class TransactionViewModel(
                     application.recurringTransactionRepository,
                     application.userPreferencesRepository,
                     WorkManager.getInstance(application),
+                    ValidateTransactionSourceUseCase(),
                     Dispatchers.Default
                 ) as T
             }

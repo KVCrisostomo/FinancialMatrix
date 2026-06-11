@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 import java.time.LocalDate
 
 class OfflineIncomeRepositoryTest {
@@ -25,8 +26,8 @@ class OfflineIncomeRepositoryTest {
     fun `getAllIncome returns flow from DAO`() = runTest {
         // Arrange
         val expectedIncome = listOf(
-            IncomeEntity(1, "Salary", 5000.0, LocalDate.now()),
-            IncomeEntity(2, "Freelance", 1200.0, LocalDate.now())
+            IncomeEntity(1, "Salary", BigDecimal("5000.0"), LocalDate.now()),
+            IncomeEntity(2, "Freelance", BigDecimal("1200.0"), LocalDate.now())
         )
         every { incomeDao.getAllIncome() } returns flowOf(expectedIncome)
 
@@ -43,7 +44,7 @@ class OfflineIncomeRepositoryTest {
     @Test
     fun `insertIncome calls DAO insert`() = runTest {
         // Arrange
-        val income = IncomeEntity(1, "Salary", 5000.0, LocalDate.now())
+        val income = IncomeEntity(1, "Salary", BigDecimal("5000.0"), LocalDate.now())
         coEvery { incomeDao.insertIncome(income) } returns Unit
 
         // Act
@@ -56,7 +57,7 @@ class OfflineIncomeRepositoryTest {
     @Test
     fun `deleteIncome calls DAO delete`() = runTest {
         // Arrange
-        val income = IncomeEntity(1, "Salary", 5000.0, LocalDate.now())
+        val income = IncomeEntity(1, "Salary", BigDecimal("5000.0"), LocalDate.now())
         coEvery { incomeDao.deleteIncome(income) } returns Unit
 
         // Act
