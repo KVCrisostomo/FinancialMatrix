@@ -12,13 +12,13 @@ The project adheres to **Clean Architecture** principles combined with the **MVV
 | Layer | Components | Responsibilities |
 | :--- | :--- | :--- |
 | **Presentation** | Jetpack Compose, ViewModels, UI State | Rendering the UI, handling user interactions, and exposing reactive state streams. |
-| **Domain** | Sealed Models, Math Engines, Use Cases | Pure business logic, type-safe category definitions, and complex financial calculations. **Mandatory:** Isolate validation logic (e.g., `ValidateTransactionSourceUseCase`) to prevent circular debt or invalid funding sources. |
+| **Domain** | Sealed Models, Math Engines, Use Cases | Pure business logic, type-safe category definitions, and complex financial calculations. **Mandatory:** Isolate validation logic (e.g., `ValidateTransactionSourceUseCase`) to prevent circular debt or invalid funding sources. Specifically, a credit card cannot be the funding source for a `CreditCardPayment`. Violations must throw `InvalidFundingSourceException`. |
 | **Data** | Room DB, DAOs, DataStore | Persistence and local storage management. |
 
 ### 1.2 Data Flow Topography
 Data flows reactively from the local Room database to the UI using Kotlin `StateFlow`.
 - **Database (Room):** Emits cold `Flow` streams from DAOs.
-   * **Atomic Ledger Rule:** All multi-entity updates (e.g., inserting a transaction while updating a Credit Card balance) MUST be wrapped in a Room `@Transaction` block to ensure atomicity. If any part fails, the entire ledger adjustment must roll back.
+   * **Atomic Ledger Rule:** All multi-entity updates (e.g., inserting a transaction while updating a Credit Card balance) MUST be wrapped in a Room `@Transaction` block to ensure atomicity. If any part fails, the entire ledger adjustment must roll back. Specifically, processing a `CreditCardPayment` requires an atomic `@Transaction` in the DAO to process the transaction insertion and the `CreditCardEntity` balance update simultaneously.
    * **Schema Versioning & Migration Rule:** Any modification to the database structural design (adding tables, altering columns, changing indices) MUST increment the database version and be paired with an explicit, hand-crafted Room `Migration` implementation.
    * **Destructive Fallback Prohibition:** The use of `fallbackToDestructiveMigration()` is strictly prohibited across all tracking branches. Every schema shift must safely transform existing user records without data truncation or ledger zeroing.
 - **Repository:** Wraps DAOs and provides a clean API to the Domain/Presentation layers.
@@ -54,6 +54,7 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 - **`IncomeScreen.kt`:** Dashboard for tracking monthly earnings. Features the structural `SavingsDashboard.kt` component permanently mounted in the top header area.
 - **`AboutScreen.kt`:** Provides the static informational route (`/about`). Displays application metadata, dynamic versioning via `BuildConfig.VERSION_NAME`, and handles navigation to the legal sub-route. Must utilize the standard application scaffold (Midnight Navy background) and rely entirely on localized strings. No business logic or state mutation is permitted.
 - **`OssLicensesScreen.kt`:** Automatically parses and renders Open Source Software (OSS) licenses using the native `aboutlibraries-compose-m3` dependency. This ensures a 100% Jetpack Compose and Material 3 architecture, completely prohibiting the use of legacy Android Activity hooks for compliance rendering.
+- **`CreditCardPaymentBottomSheet.kt`:** A modal component for processing credit card payments. The ViewModel must expose `StateFlow` to toggle dynamic UI elements, such as the target credit card dropdown, ensuring reactive state management.
 
 ---
 
