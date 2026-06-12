@@ -65,6 +65,43 @@ if ($missingTurbine) {
     exit 1
 }
 
+# 5.3 Release 1: Charting & Aggregation Gates
+Write-Host "Verifying Release 1 Gates (Charting & Aggregation)..." -ForegroundColor Cyan
+# Enforce Vico Charting Dependency in build.gradle.kts
+$buildFile = "app/build.gradle.kts"
+if (-not (Select-String -Path $buildFile -Pattern "com.patrykandpatrick.vico")) {
+    Write-Host "Architectural Violation: Vico charting library missing for Release 1!" -ForegroundColor Red
+    exit 1
+}
+
+# Enforce DB-Level Aggregation for Analytics-related DAOs
+$daos = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Filter "*Dao.kt" -Recurse
+foreach ($dao in $daos) {
+    if ($dao.Name -like "*Analytics*" -or $dao.Name -like "*History*") {
+        if (-not (Select-String -Path $dao.FullName -Pattern "strftime|date|GROUP BY")) {
+             Write-Host "Architectural Violation: DAO $($dao.Name) is missing DB-level aggregation logic (strftime/GROUP BY)." -ForegroundColor Red
+             exit 1
+        }
+    }
+}
+
+# 5.4 Release 2: WorkManager & Resilience Gates
+Write-Host "Verifying Release 2 Gates (WorkManager & Resilience)..." -ForegroundColor Cyan
+# Enforce WorkManager Dependency in build.gradle.kts
+if (-not (Select-String -Path $buildFile -Pattern "androidx.work:work-runtime-ktx")) {
+    Write-Host "Architectural Violation: WorkManager dependency missing for Release 2!" -ForegroundColor Red
+    exit 1
+}
+
+# Enforce runAttemptCount in WorkManager Workers
+$workers = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Filter "*Worker.kt" -Recurse
+foreach ($worker in $workers) {
+    if (-not (Select-String -Path $worker.FullName -Pattern "runAttemptCount")) {
+        Write-Host "Architectural Violation: runAttemptCount check missing in $($worker.Name)!" -ForegroundColor Red
+        exit 1
+    }
+}
+
 # 6. Run Open Source Software Dependency License Validation Gate
 Write-Host "Running Open Source Software License Asset Verification..." -ForegroundColor Yellow
 ./gradlew app:exportLibraryDefinitions
