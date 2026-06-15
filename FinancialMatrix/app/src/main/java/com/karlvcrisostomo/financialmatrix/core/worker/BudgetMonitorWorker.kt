@@ -35,7 +35,7 @@ class BudgetMonitorWorker(
         val currency = preferences.currencySymbol
 
         if (limit > BigDecimal.ZERO) {
-            val percentage = monthlyTotal.divide(limit, 4, RoundingMode.HALF_UP)
+            val percentage = monthlyTotal.divide(limit, 4, RoundingMode.HALF_EVEN)
                 .multiply(BigDecimal("100"))
             
             when {

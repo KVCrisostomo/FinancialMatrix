@@ -19,18 +19,20 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDate
 
 class CreditCardViewModel(
     private val cardRepository: CreditCardRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val clock: Clock = Clock.systemDefaultZone()
 ) : ViewModel() {
 
     val uiState: StateFlow<CreditCardUiState> = combine(
         cardRepository.getAllCards(),
         transactionRepository.getAllTransactions()
     ) { cards, transactions ->
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         
         val stats = cards.map { card ->
             calculateStats(card, transactions, today)
@@ -71,7 +73,7 @@ class CreditCardViewModel(
         val currentBalance = card.balance
         val remainingLimit = card.creditLimit.subtract(currentBalance)
         val utilization = if (card.creditLimit > BigDecimal.ZERO) {
-            currentBalance.divide(card.creditLimit, 4, RoundingMode.HALF_UP)
+            currentBalance.divide(card.creditLimit, 4, RoundingMode.HALF_EVEN)
                 .multiply(BigDecimal("100"))
         } else {
             BigDecimal.ZERO

@@ -23,9 +23,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("beta") {
+            storeFile = file(project.findProperty("BETA_STORE_FILE") ?: "debug.keystore")
+            storePassword = project.findProperty("BETA_STORE_PASSWORD")?.toString() ?: "android"
+            keyAlias = project.findProperty("BETA_KEY_ALIAS")?.toString() ?: "androiddebugkey"
+            keyPassword = project.findProperty("BETA_KEY_PASSWORD")?.toString() ?: "android"
+        }
+    }
+
     buildTypes {
+        create("beta") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+            signingConfig = signingConfigs.getByName("beta")
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

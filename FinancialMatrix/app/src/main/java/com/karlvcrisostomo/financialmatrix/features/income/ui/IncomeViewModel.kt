@@ -47,7 +47,7 @@ class IncomeViewModel(
 
         val netSavings = totalIncome.subtract(totalSpent)
         val savingsRate = if (totalIncome > BigDecimal.ZERO) {
-            netSavings.divide(totalIncome, 4, RoundingMode.HALF_UP).multiply(BigDecimal("100"))
+            netSavings.divide(totalIncome, 4, RoundingMode.HALF_EVEN).multiply(BigDecimal("100"))
         } else {
             BigDecimal.ZERO
         }

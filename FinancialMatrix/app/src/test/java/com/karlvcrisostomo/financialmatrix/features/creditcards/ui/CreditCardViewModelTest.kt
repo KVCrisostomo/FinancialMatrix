@@ -21,7 +21,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CreditCardViewModelTest {
@@ -29,6 +32,12 @@ class CreditCardViewModelTest {
     private val cardRepository: CreditCardRepository = mockk(relaxed = true)
     private val transactionRepository: TransactionRepository = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
+    
+    // Fixed clock for consistent date calculations
+    private val fixedClock = Clock.fixed(
+        Instant.parse("2026-06-01T10:00:00Z"),
+        ZoneId.of("UTC")
+    )
 
     private val mockCards = listOf(
         CreditCardEntity(1, "Visa Gold", 15, 20, BigDecimal("50000.0"), BigDecimal("3000.0"))
@@ -60,7 +69,7 @@ class CreditCardViewModelTest {
 
     @Test
     fun `initial uiState computes correct stats for card`() = runTest {
-        val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
+        val viewModel = CreditCardViewModel(cardRepository, transactionRepository, fixedClock)
 
         viewModel.uiState.test {
             val firstEmission = awaitItem()
@@ -81,7 +90,7 @@ class CreditCardViewModelTest {
 
     @Test
     fun `addCard calls repository`() = runTest {
-        val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
+        val viewModel = CreditCardViewModel(cardRepository, transactionRepository, fixedClock)
         val newCard = CreditCardEntity(0, "New Card", 1, 20, BigDecimal("10000.0"), BigDecimal.ZERO)
 
         viewModel.addCard(newCard)
@@ -92,7 +101,7 @@ class CreditCardViewModelTest {
 
     @Test
     fun `deleteCard calls repository`() = runTest {
-        val viewModel = CreditCardViewModel(cardRepository, transactionRepository)
+        val viewModel = CreditCardViewModel(cardRepository, transactionRepository, fixedClock)
         val cardToDelete = mockCards[0]
 
         viewModel.deleteCard(cardToDelete)

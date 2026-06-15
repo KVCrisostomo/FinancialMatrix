@@ -22,6 +22,6 @@ class Converters {
 
     @TypeConverter
     fun bigDecimalToString(value: BigDecimal?): String? {
-        return value?.toString()
+        return value?.toPlainString()
     }
 }
