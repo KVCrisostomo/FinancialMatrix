@@ -16,6 +16,7 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardR
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.OfflineCreditCardRepository
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeRepository
 import com.karlvcrisostomo.financialmatrix.features.income.data.OfflineIncomeRepository
+import com.karlvcrisostomo.financialmatrix.features.analytics.data.AnalyticsRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineRecurringTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.OfflineTransactionRepository
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionRepository
@@ -53,6 +54,10 @@ class FinancialMatrixApplication : Application() {
 
     val recurringTransactionRepository: RecurringTransactionRepository by lazy {
         OfflineRecurringTransactionRepository(database.recurringTransactionDao())
+    }
+
+    val analyticsRepository: AnalyticsRepository by lazy {
+        AnalyticsRepository(database.analyticsDao())
     }
 
     val userPreferencesRepository: UserPreferencesRepository by lazy {

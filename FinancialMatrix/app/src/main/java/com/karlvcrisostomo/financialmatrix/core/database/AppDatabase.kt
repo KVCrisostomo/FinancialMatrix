@@ -9,6 +9,7 @@ import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardD
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeDao
 import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
+import com.karlvcrisostomo.financialmatrix.features.analytics.data.AnalyticsDao
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionDao
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.RecurringTransactionEntity
 import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionDao
@@ -21,6 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun creditCardDao(): CreditCardDao
     abstract fun incomeDao(): IncomeDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
+    abstract fun analyticsDao(): AnalyticsDao
 
     companion object {
         val MIGRATION_3_4 = object : Migration(3, 4) {

@@ -57,7 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.work.runtime.ktx)
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
@@ -75,4 +75,7 @@ dependencies {
     ksp(libs.room.compiler)            // KSP compiler for annotation processing
     implementation(libs.aboutlibraries.compose.m3)
     implementation(libs.aboutlibraries.core)
+    implementation("com.patrykandpatrick.vico:compose:1.15.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.15.0")
+    implementation("com.patrykandpatrick.vico:core:1.15.0")
 }
