@@ -1,8 +1,5 @@
 package com.karlvcrisostomo.financialmatrix.features.analytics.data
 
-import com.karlvcrisostomo.financialmatrix.domain.usecase.CategorySpending
-import com.karlvcrisostomo.financialmatrix.features.income.data.IncomeEntity
-import com.karlvcrisostomo.financialmatrix.features.transactions.data.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.math.BigDecimal
@@ -19,7 +16,7 @@ class AnalyticsRepository(private val analyticsDao: AnalyticsDao) {
         val now = LocalDate.now()
         val startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         
-        (0 until 12).map { i ->
+        (0 until 6).map { i ->
             val weekStart = startOfWeek.minusWeeks(i.toLong())
             val weekEnd = weekStart.plusDays(6)
             
@@ -38,7 +35,7 @@ class AnalyticsRepository(private val analyticsDao: AnalyticsDao) {
     ) { transactions, income ->
         val now = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
         
-        (0 until 12).map { i ->
+        (0 until 6).map { i ->
             val monthStart = now.minusMonths(i.toLong())
             val monthEnd = monthStart.with(TemporalAdjusters.lastDayOfMonth())
             
@@ -57,7 +54,7 @@ class AnalyticsRepository(private val analyticsDao: AnalyticsDao) {
     ) { transactions, income ->
         val now = LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
         
-        (0 until 5).map { i ->
+        (0 until 6).map { i ->
             val yearStart = now.minusYears(i.toLong())
             val yearEnd = yearStart.with(TemporalAdjusters.lastDayOfYear())
             
@@ -75,7 +72,7 @@ class AnalyticsRepository(private val analyticsDao: AnalyticsDao) {
             val now = LocalDate.now()
             val startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             
-            (0 until 12).flatMap { i ->
+            (0 until 6).flatMap { i ->
                 val weekStart = startOfWeek.minusWeeks(i.toLong())
                 val weekEnd = weekStart.plusDays(6)
                 
@@ -95,7 +92,7 @@ class AnalyticsRepository(private val analyticsDao: AnalyticsDao) {
         analyticsDao.getAllTransactions().combine(analyticsDao.getAllIncome()) { transactions, _ ->
             val now = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
             
-            (0 until 12).flatMap { i ->
+            (0 until 6).flatMap { i ->
                 val monthStart = now.minusMonths(i.toLong())
                 val monthEnd = monthStart.with(TemporalAdjusters.lastDayOfMonth())
                 
@@ -115,7 +112,7 @@ class AnalyticsRepository(private val analyticsDao: AnalyticsDao) {
         analyticsDao.getAllTransactions().combine(analyticsDao.getAllIncome()) { transactions, _ ->
             val now = LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
             
-            (0 until 5).flatMap { i ->
+            (0 until 6).flatMap { i ->
                 val yearStart = now.minusYears(i.toLong())
                 val yearEnd = yearStart.with(TemporalAdjusters.lastDayOfYear())
                 
