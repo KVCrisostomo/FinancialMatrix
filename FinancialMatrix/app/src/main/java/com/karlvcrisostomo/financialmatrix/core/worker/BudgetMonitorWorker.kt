@@ -17,6 +17,9 @@ class BudgetMonitorWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        if (runAttemptCount > 5) {
+            return Result.failure()
+        }
         val application = applicationContext as FinancialMatrixApplication
         val repository = application.transactionRepository
         val preferencesRepository = application.userPreferencesRepository

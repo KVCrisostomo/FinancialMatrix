@@ -14,6 +14,9 @@ class RecurringTransactionWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
+        if (runAttemptCount > 5) {
+            return Result.failure()
+        }
         val app = applicationContext as? FinancialMatrixApplication
         val recurringRepo = app?.recurringTransactionRepository
         val transRepo = app?.transactionRepository
