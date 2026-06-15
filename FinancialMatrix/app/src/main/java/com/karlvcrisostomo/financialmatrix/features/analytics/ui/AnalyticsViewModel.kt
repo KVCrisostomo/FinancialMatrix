@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -68,9 +70,6 @@ class AnalyticsViewModel(
     ) { timeline, selected, baseData, rawCategoryAggregation ->
         val filteredCategoryData = getCategorySpendingUseCase.executeSync(rawCategoryAggregation, selected)
         
-        // Sync chart model with stacked data
-        updateChart(baseData, filteredCategoryData, selected)
-        
         val expenseCategories = rawCategoryAggregation.map { it.category }.distinct().sorted()
         val allAvailableCategories = expenseCategories + listOf("Income")
         
@@ -87,6 +86,14 @@ class AnalyticsViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AnalyticsUiState(isLoading = true)
     )
+
+    init {
+        uiState.onEach { state ->
+            if (!state.isLoading) {
+                updateChart(state.dataPoints, state.categorySpending, state.selectedCategories)
+            }
+        }.launchIn(viewModelScope)
+    }
 
     fun updateTimeline(timeline: AnalyticsTimeline) {
         _timeline.value = timeline

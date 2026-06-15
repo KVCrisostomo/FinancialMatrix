@@ -30,7 +30,7 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 - **Dispatchers.IO:** Mandatory for all database transactions.
 - **Dispatchers.Default:** Reserved for heavy arithmetic (using `BigDecimal`), filtering, and sorting within the ViewModels to keep the Main thread responsive.
 - **Main Thread:** Restricted to UI rendering and event handling only.
-- **Financial Precision:** Prohibit the use of `Float` or `Double` for financial calculations. All currency values MUST be handled via `java.math.BigDecimal` to ensure absolute precision, mapped via Room `TypeConverters`. This applies strictly to all aggregation logic and chart data point calculations.
+- **Financial Precision:** Prohibit the use of `Float` or `Double` for financial calculations. All currency values MUST be handled via `java.math.BigDecimal` to ensure absolute precision, mapped via Room `TypeConverters`. This applies strictly to all aggregation logic and chart data point calculations. **Rule:** When performing SQLite-level aggregations on `BigDecimal` stored as `TEXT`, avoid `CAST(... AS REAL)` as it introduces floating-point precision loss; instead, perform precision-safe math or consider integer-based storage (`Long` cents) if SQLite summation is mandatory.
 
 ### 1.4 Navigation Scaffolding
 - **Right-Side Navigation:** The `ModalNavigationDrawer` is anchored to and slides exclusively from the **Right edge** of the display.
