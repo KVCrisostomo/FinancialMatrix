@@ -8,6 +8,7 @@ Write-Host "Running Core Unit & Domain Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.core.util.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.domain.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.worker.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.analytics.*
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Core/Domain Unit Tests Failed!" -ForegroundColor Red
     exit 1
@@ -27,6 +28,7 @@ Write-Host "Running ViewModel & UI State Tests..." -ForegroundColor Yellow
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.transactions.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.creditcards.ui.*
 ./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.income.ui.*
+./gradlew testDebugUnitTest --tests com.karlvcrisostomo.financialmatrix.features.analytics.ui.*
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ViewModel Tests Failed!" -ForegroundColor Red
     exit 1
@@ -73,6 +75,10 @@ if (-not (Select-String -Path $buildFile -Pattern "com.patrykandpatrick.vico")) 
     Write-Host "Architectural Violation: Vico charting library missing for Release 1!" -ForegroundColor Red
     exit 1
 }
+if (-not (Select-String -Path $buildFile -Pattern "1.15.0")) {
+    Write-Host "Architectural Violation: Vico must be pinned to stable 1.15.0 for Release 1 compliance!" -ForegroundColor Red
+    exit 1
+}
 
 # Enforce DB-Level Aggregation for Analytics-related DAOs
 $daos = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Filter "*Dao.kt" -Recurse
@@ -98,6 +104,17 @@ $workers = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialm
 foreach ($worker in $workers) {
     if (-not (Select-String -Path $worker.FullName -Pattern "runAttemptCount")) {
         Write-Host "Architectural Violation: runAttemptCount check missing in $($worker.Name)!" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# 5.5 Enforce Precision in SQLite Aggregations
+Write-Host "Verifying Precision in SQLite Aggregations..." -ForegroundColor Cyan
+$daoFiles = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Filter "*Dao.kt" -Recurse
+foreach ($file in $daoFiles) {
+    if (Select-String -Path $file.FullName -Pattern "CAST\(.* AS REAL\)") {
+        Write-Host "Architectural Violation: Precision loss detected! Usage of 'CAST(... AS REAL)' is prohibited in financial DAOs." -ForegroundColor Red
+        Write-Host "  File: $($file.FullName)" -ForegroundColor Yellow
         exit 1
     }
 }

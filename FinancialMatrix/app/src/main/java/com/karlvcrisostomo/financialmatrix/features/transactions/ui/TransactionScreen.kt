@@ -60,6 +60,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.karlvcrisostomo.financialmatrix.R
+import com.karlvcrisostomo.financialmatrix.features.analytics.ui.AnalyticsScreen
+import com.karlvcrisostomo.financialmatrix.features.analytics.ui.AnalyticsViewModel
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardDialog
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardScreen
@@ -78,6 +80,7 @@ sealed class Screen(val route: String, val title: String) {
     object Income : Screen("income", "Income Ledger")
     object CreditCards : Screen("credit_cards", "Credit Cards")
     object Settings : Screen("settings", "Settings")
+    object Analytics : Screen("analytics", "Analytics")
     object About : Screen("about", "About")
     object OssLicenses : Screen("oss_licenses", "Open Source Licenses")
     object Loading : Screen("loading", "Initializing...")
@@ -88,6 +91,7 @@ sealed class Screen(val route: String, val title: String) {
 fun TransactionScreen(
     viewModel: TransactionViewModel,
     ccViewModel: CreditCardViewModel,
+    analyticsViewModel: AnalyticsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AnalyticsViewModel.Factory),
     incomeViewModel: IncomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = IncomeViewModel.Factory),
     modifier: Modifier = Modifier
 ) {
@@ -155,10 +159,10 @@ fun TransactionScreen(
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
                         NavigationDrawerItem(
-                            label = { Text(Screen.Settings.title) },
-                            selected = currentRoute == Screen.Settings.route,
+                            label = { Text(Screen.Analytics.title) },
+                            selected = currentRoute == Screen.Analytics.route,
                             onClick = {
-                                navController.navigate(Screen.Settings.route)
+                                navController.navigate(Screen.Analytics.route)
                                 scope.launch { drawerState.close() }
                             },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -166,6 +170,15 @@ fun TransactionScreen(
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                        NavigationDrawerItem(
+                            label = { Text(Screen.Settings.title) },
+                            selected = currentRoute == Screen.Settings.route,
+                            onClick = {
+                                navController.navigate(Screen.Settings.route)
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                         )
                         NavigationDrawerItem(
                             label = { Text(Screen.About.title) },
@@ -194,6 +207,7 @@ fun TransactionScreen(
                                             Screen.Income.route -> Screen.Income.title
                                             Screen.CreditCards.route -> Screen.CreditCards.title
                                             Screen.Settings.route -> Screen.Settings.title
+                                            Screen.Analytics.route -> Screen.Analytics.title
                                             Screen.About.route -> Screen.About.title
                                             else -> "Financial Matrix"
                                         }
@@ -287,6 +301,9 @@ fun TransactionScreen(
                                     Text("Manage Recurring Transactions")
                                 }
                             }
+                        }
+                        composable(Screen.Analytics.route) {
+                            AnalyticsScreen(viewModel = analyticsViewModel)
                         }
                         composable(Screen.About.route) {
                             AboutScreen(
