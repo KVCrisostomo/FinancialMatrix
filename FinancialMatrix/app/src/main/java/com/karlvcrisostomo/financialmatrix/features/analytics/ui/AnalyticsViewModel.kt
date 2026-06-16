@@ -11,6 +11,7 @@ import com.karlvcrisostomo.financialmatrix.features.analytics.data.AnalyticsData
 import com.karlvcrisostomo.financialmatrix.features.analytics.data.AnalyticsRepository
 import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
 import com.patrykandpatrick.vico.core.entry.entryOf
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,10 +19,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class AnalyticsTimeline {
     WEEK, MONTH, YEAR
@@ -81,7 +84,8 @@ class AnalyticsViewModel(
             selectedCategories = selected,
             isLoading = false
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default)
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AnalyticsUiState(isLoading = true)
@@ -114,44 +118,46 @@ class AnalyticsViewModel(
         selectedCategories: Set<String>
     ) {
         viewModelScope.launch {
-            val reversedBase = baseData.reversed()
-            
-            // Determine which categories to show (Expenses)
-            val expenseCategories = if (selectedCategories.isEmpty()) {
-                categoryData.values.flatten().map { it.category }.distinct().sorted()
-            } else {
-                selectedCategories.filter { it != "Income" }.sorted()
-            }
-
-            val categorySeries = expenseCategories.map { category ->
-                reversedBase.mapIndexed { index, point ->
-                    val amount = categoryData[point.interval]?.find { it.category == category }?.amount ?: java.math.BigDecimal.ZERO
-                    entryOf(index.toFloat(), amount.toFloat())
+            withContext(Dispatchers.Default) {
+                val reversedBase = baseData.reversed()
+                
+                // Determine which categories to show (Expenses)
+                val expenseCategories = if (selectedCategories.isEmpty()) {
+                    categoryData.values.flatten().map { it.category }.distinct().sorted()
+                } else {
+                    selectedCategories.filter { it != "Income" }.sorted()
                 }
-            }
 
-            // Determine if Income should be shown
-            val showIncome = selectedCategories.isEmpty() || "Income" in selectedCategories
-            val incomeEntries = if (showIncome) {
-                reversedBase.mapIndexed { index, point ->
-                    entryOf(index.toFloat(), point.totalIncome.toFloat())
+                val categorySeries = expenseCategories.map { category ->
+                    reversedBase.mapIndexed { index, point ->
+                        val amount = categoryData[point.interval]?.find { it.category == category }?.amount ?: java.math.BigDecimal.ZERO
+                        entryOf(index.toFloat(), amount.toFloat())
+                    }
                 }
-            } else {
-                null
-            }
-            
-            // In a stacked chart, Vico stacks the series in order.
-            // We'll put category segment series first, then income.
-            val allSeries = if (incomeEntries != null) {
-                categorySeries + listOf(incomeEntries)
-            } else {
-                categorySeries
-            }
-            
-            if (allSeries.isNotEmpty() && allSeries.all { it.isNotEmpty() }) {
-                entryModelProducer.setEntries(allSeries)
-            } else {
-                entryModelProducer.setEntries(emptyList<List<com.patrykandpatrick.vico.core.entry.ChartEntry>>())
+
+                // Determine if Income should be shown
+                val showIncome = selectedCategories.isEmpty() || "Income" in selectedCategories
+                val incomeEntries = if (showIncome) {
+                    reversedBase.mapIndexed { index, point ->
+                        entryOf(index.toFloat(), point.totalIncome.toFloat())
+                    }
+                } else {
+                    null
+                }
+                
+                // In a stacked chart, Vico stacks the series in order.
+                // We'll put category segment series first, then income.
+                val allSeries = if (incomeEntries != null) {
+                    categorySeries + listOf(incomeEntries)
+                } else {
+                    categorySeries
+                }
+                
+                if (allSeries.isNotEmpty() && allSeries.all { it.isNotEmpty() }) {
+                    entryModelProducer.setEntries(allSeries)
+                } else {
+                    entryModelProducer.setEntries(emptyList<List<com.patrykandpatrick.vico.core.entry.ChartEntry>>())
+                }
             }
         }
     }

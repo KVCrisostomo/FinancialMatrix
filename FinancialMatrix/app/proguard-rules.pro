@@ -18,6 +18,10 @@
 -keep class net.sqlcipher.** { *; }
 -dontwarn net.sqlcipher.**
 
+# Repositories
+-keep class com.karlvcrisostomo.financialmatrix.features.*.data.*Repository { *; }
+-keep class com.karlvcrisostomo.financialmatrix.core.data.*Repository { *; }
+
 # Financial Precision (BigDecimal)
 -keep class java.math.BigDecimal { *; }
 

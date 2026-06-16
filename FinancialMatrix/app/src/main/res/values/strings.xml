@@ -1,10 +1,7 @@
 <resources>
     <string name="app_name">Financial Matrix</string>
-    <string name="menu_about">About</string>
     <string name="about_title">Financial Matrix Ledger</string>
     <string name="about_description">Financial Matrix Ledger (FML) is an advanced financial management tracking tool designed to keep your records immutably organized, transparent, and securely audited.</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_licenses">Open Source Licenses</string>
-    <string name="about_app_bar_title">About</string>
-    <string name="nav_back_description">Navigate Back</string>
 </resources>

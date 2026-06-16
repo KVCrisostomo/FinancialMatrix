@@ -90,11 +90,11 @@ sealed class Screen(val route: String, val title: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionScreen(
+    modifier: Modifier = Modifier,
     viewModel: TransactionViewModel,
     ccViewModel: CreditCardViewModel,
     analyticsViewModel: AnalyticsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = AnalyticsViewModel.Factory),
-    incomeViewModel: IncomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = IncomeViewModel.Factory),
-    modifier: Modifier = Modifier
+    incomeViewModel: IncomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = IncomeViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ccUiState by ccViewModel.uiState.collectAsStateWithLifecycle()
