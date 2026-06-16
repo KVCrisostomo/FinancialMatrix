@@ -3,6 +3,7 @@ package com.karlvcrisostomo.financialmatrix.features.transactions.data
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.MapColumn
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
@@ -14,6 +15,18 @@ import java.math.BigDecimal
 interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
+
+    @Query("SELECT SUM(amount) FROM transactions WHERE category != 'CC Payment' AND strftime('%m', date('1970-01-01', '+' || date || ' days')) = strftime('%m', 'now') AND strftime('%Y', date('1970-01-01', '+' || date || ' days')) = strftime('%Y', 'now')")
+    fun getMonthlyTotalSpent(): Flow<BigDecimal?>
+
+    @Query("SELECT SUM(amount) FROM transactions WHERE category != 'CC Payment' AND isCreditCard = 0 AND strftime('%m', date('1970-01-01', '+' || date || ' days')) = strftime('%m', 'now') AND strftime('%Y', date('1970-01-01', '+' || date || ' days')) = strftime('%Y', 'now')")
+    fun getMonthlyCashSpent(): Flow<BigDecimal?>
+
+    @Query("SELECT SUM(amount) FROM transactions WHERE category != 'CC Payment' AND isCreditCard = 1 AND strftime('%m', date('1970-01-01', '+' || date || ' days')) = strftime('%m', 'now') AND strftime('%Y', date('1970-01-01', '+' || date || ' days')) = strftime('%Y', 'now')")
+    fun getMonthlyCreditSpent(): Flow<BigDecimal?>
+
+    @Query("SELECT category, SUM(amount) as totalAmount FROM transactions WHERE category != 'CC Payment' AND strftime('%m', date('1970-01-01', '+' || date || ' days')) = strftime('%m', 'now') AND strftime('%Y', date('1970-01-01', '+' || date || ' days')) = strftime('%Y', 'now') GROUP BY category")
+    fun getMonthlyCategoryAmounts(): Flow<Map<@MapColumn("category") String, @MapColumn("totalAmount") BigDecimal>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)

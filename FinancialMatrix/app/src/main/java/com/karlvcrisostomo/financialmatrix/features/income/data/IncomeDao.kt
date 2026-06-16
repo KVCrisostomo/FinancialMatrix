@@ -12,6 +12,9 @@ interface IncomeDao {
     @Query("SELECT * FROM income ORDER BY date DESC")
     fun getAllIncome(): Flow<List<IncomeEntity>>
 
+    @Query("SELECT SUM(amount) FROM income WHERE strftime('%m', date('1970-01-01', '+' || date || ' days')) = strftime('%m', 'now') AND strftime('%Y', date('1970-01-01', '+' || date || ' days')) = strftime('%Y', 'now')")
+    fun getMonthlyTotalIncome(): Flow<java.math.BigDecimal?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIncome(income: IncomeEntity)
 

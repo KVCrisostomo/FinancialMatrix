@@ -7,16 +7,12 @@ plugins {
 
 android {
     namespace = "com.karlvcrisostomo.financialmatrix"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.karlvcrisostomo.financialmatrix"
         minSdk = 26 // Ensures native java.time support without desugaring friction
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -38,6 +34,7 @@ android {
             matchingFallbacks += listOf("release")
             signingConfig = signingConfigs.getByName("beta")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -45,6 +42,7 @@ android {
         }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -62,6 +60,15 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
+
+    lint {
+        abortOnError = true
+        warningsAsErrors = true
+        checkReleaseBuilds = false
+        disable += "NewerVersionAvailable"
+        disable += "OldTargetApi"
+        disable += "GradleDependency"
+    }
 }
 
 dependencies {
@@ -77,7 +84,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.datastore.preferences)
-    implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
@@ -95,7 +102,7 @@ dependencies {
     ksp(libs.room.compiler)            // KSP compiler for annotation processing
     implementation(libs.aboutlibraries.compose.m3)
     implementation(libs.aboutlibraries.core)
-    implementation("com.patrykandpatrick.vico:compose:1.15.0")
-    implementation("com.patrykandpatrick.vico:compose-m3:1.15.0")
-    implementation("com.patrykandpatrick.vico:core:1.15.0")
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
 }

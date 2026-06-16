@@ -43,15 +43,25 @@ if ($LASTEXITCODE -ne 0) {
 # 5. Architectural Integrity Gate (Static Analysis)
 Write-Host "Running Architectural Integrity Checks..." -ForegroundColor Yellow
 
-# 5.1 Enforce BigDecimal for Financial Entities
-$violation = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Filter "*Entity.kt" -Recurse | Select-String -Pattern "Double", "Float"
+# 5.1 Enforce Zero-Warning Compilation Policy (Lint)
+Write-Host "Running Android Lint..." -ForegroundColor Yellow
+./gradlew lintDebug
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Quality Gate Failure: Lint errors or warnings detected!" -ForegroundColor Red
+    exit 1
+}
+
+# 5.2 Enforce BigDecimal for Financial Logic (Domain/Data)
+$violation = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Include "*.kt" -Recurse |
+    Where-Object { $_.FullName -notmatch "ui" } |
+    Select-String -Pattern "\b(Double|Float)\b"
 if ($violation) {
-    Write-Host "Architectural Violation: Double or Float detected in Financial Entities!" -ForegroundColor Red
+    Write-Host "Architectural Violation: Double or Float detected in Financial Logic layers!" -ForegroundColor Red
     $violation | ForEach-Object { Write-Host "  $($_.Path):$($_.LineNumber) - $($_.Line)" }
     exit 1
 }
 
-# 5.2 Enforce Turbine for Asynchronous Flow Testing
+# 5.3 Enforce Turbine for Asynchronous Flow Testing
 $testFiles = Get-ChildItem -Path "app/src/test/java/com/karlvcrisostomo/financialmatrix" -Filter "*Test.kt" -Recurse
 $missingTurbine = $true
 foreach ($file in $testFiles) {

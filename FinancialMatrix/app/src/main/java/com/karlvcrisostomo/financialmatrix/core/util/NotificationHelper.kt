@@ -20,14 +20,12 @@ class NotificationHelper(private val context: Context) {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-                description = "Notifications for budget threshold alerts"
-            }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+            description = "Notifications for budget threshold alerts"
         }
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     fun showBudgetAlert(title: String, message: String) {

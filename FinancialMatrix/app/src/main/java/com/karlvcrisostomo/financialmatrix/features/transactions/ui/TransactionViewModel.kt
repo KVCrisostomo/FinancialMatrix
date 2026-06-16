@@ -59,7 +59,11 @@ class TransactionViewModel(
     // Transform the raw database Flow into a cold state stream for the UI
     val uiState: StateFlow<TransactionUiState> = combine(
         repository.getAllTransactions(),
-        incomeRepository.getAllIncome(),
+        repository.getMonthlyTotalSpent(),
+        repository.getMonthlyCashSpent(),
+        repository.getMonthlyCreditSpent(),
+        repository.getMonthlyCategoryAmounts(),
+        incomeRepository.getMonthlyTotalIncome(),
         _sortOrder,
         _selectedCategory,
         _searchQuery,
@@ -68,13 +72,17 @@ class TransactionViewModel(
     ) { flows ->
         @Suppress("UNCHECKED_CAST")
         val transactionList = flows[0] as List<TransactionEntity>
+        val totalSpent = (flows[1] as BigDecimal?) ?: BigDecimal.ZERO
+        val cashSpent = (flows[2] as BigDecimal?) ?: BigDecimal.ZERO
+        val creditSpent = (flows[3] as BigDecimal?) ?: BigDecimal.ZERO
         @Suppress("UNCHECKED_CAST")
-        val incomeList = flows[1] as List<IncomeEntity>
-        val sortOrder = flows[2] as TransactionSortOrder
-        val category = flows[3] as String?
-        val query = flows[4] as String
-        val errorMessage = flows[5] as String?
-        val preferences = flows[6] as com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
+        val categoryAmounts = flows[4] as Map<String, BigDecimal>
+        val totalIncome = (flows[5] as BigDecimal?) ?: BigDecimal.ZERO
+        val sortOrder = flows[6] as TransactionSortOrder
+        val category = flows[7] as String?
+        val query = flows[8] as String
+        val errorMessage = flows[9] as String?
+        val preferences = flows[10] as com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 
         // 1. Apply Filtering
         val filteredList = transactionList
@@ -93,29 +101,9 @@ class TransactionViewModel(
             TransactionSortOrder.LOWEST_AMOUNT -> filteredList.sortedBy { it.amount }
         }
 
-        // 3. Compute Analytics
-        val today = java.time.LocalDate.now()
-        val monthlyTransactions = transactionList.filter { 
-            it.date.month == today.month && 
-            it.date.year == today.year && 
-            !TransactionCategory.from(it.category).isInternalTransfer()
-        }
-        
-        val totalSpent = monthlyTransactions.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
-        val cashSpent = monthlyTransactions.filter { !it.isCreditCard }.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
-        val creditSpent = monthlyTransactions.filter { it.isCreditCard }.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
-        
-        val categoryAmounts = monthlyTransactions.groupBy { it.category }
-            .mapValues { (_, transactions) -> transactions.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) } }
-
-        // 4. Compute Monthly Income
-        val totalIncome = incomeList
-            .filter { it.date.month == today.month && it.date.year == today.year }
-            .fold(BigDecimal.ZERO) { acc, i -> acc.add(i.amount) }
-
         TransactionUiState(
             transactions = sortedList,
-            incomeTransactions = incomeList,
+            incomeTransactions = emptyList(), // No longer needed for aggregate view
             sortOrder = sortOrder,
             selectedCategory = category,
             searchQuery = query,

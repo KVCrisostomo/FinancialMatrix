@@ -11,9 +11,9 @@ The project adheres to **Clean Architecture** principles combined with the **MVV
 ### 1.1 Layer Definitions
 | Layer | Components | Responsibilities |
 | :--- | :--- | :--- |
-| **Presentation** | Jetpack Compose, ViewModels, UI State | Rendering the UI, handling user interactions, and exposing reactive state streams. |
+| **Presentation** | Jetpack Compose, ViewModels, UI State | Rendering the UI, handling user interactions, exposing reactive state streams, and managing secure window flags (`FLAG_SECURE`). |
 | **Domain** | Sealed Models, Math Engines, Use Cases | Pure business logic, type-safe category definitions, and complex financial calculations. **Mandatory:** Isolate validation logic (e.g., `ValidateTransactionSourceUseCase`) to prevent circular debt or invalid funding sources. |
-| **Data** | Room DB, DAOs, DataStore | Persistence and local storage management. |
+| **Data** | Room DB, DAOs, Repositories, DataStore | Persistence and local storage management. Encrypted at rest via **SQLCipher**. |
 
 ### 1.2 Data Flow Topography
 Data flows reactively from the local Room database to the UI using Kotlin `StateFlow`.
@@ -63,6 +63,7 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 - **`IncomeScreen.kt`:** Dashboard for tracking monthly earnings. Features the structural `SavingsDashboard.kt` component permanently mounted in the top header area.
 - **`AboutScreen.kt`:** Provides the static informational route (`/about`). Displays application metadata, dynamic versioning via `BuildConfig.VERSION_NAME`, and handles navigation to the legal sub-route. Must utilize the standard application scaffold (Midnight Navy background) and rely entirely on localized strings. No business logic or state mutation is permitted.
 - **`OssLicensesScreen.kt`:** Automatically parses and renders Open Source Software (OSS) licenses using the native `aboutlibraries-compose-m3` dependency. This ensures a 100% Jetpack Compose and Material 3 architecture, completely prohibiting the use of legacy Android Activity hooks for compliance rendering.
+- **`AnalyticsScreen.kt`:** Provides the visual dashboard for financial trends. Utilizes the **Vico** library for native Compose rendering. Strictly enforces off-main-thread data processing for chart model updates.
 
 ---
 
@@ -74,7 +75,7 @@ Entry is strictly blocked until security clearance is obtained via the following
 ```mermaid
 graph TD
     Start[App Boot-Up] --> Login[Pre-Authentication Login Screen]
-    Login --> Auth{PIN 1236 / Biometric}
+    Login --> Auth{Biometric / Device Credential}
     Auth -- Failure --> Login
     Auth -- Success --> LoadingContainer[Screen.Loading View]
     LoadingContainer --> UI[Intermediate Layout: Emblem + App Name + M3 Progress Circle]
@@ -82,11 +83,12 @@ graph TD
 ```
 
 - **Login Screen UI:** Solid `#0B1A30` Midnight Navy background with Premium Gold typography.
+- **Biometric Specification:** Utilizes `androidx.biometric:biometric`. Allows `BIOMETRIC_STRONG` and `DEVICE_CREDENTIAL` (PIN/Pattern) for maximum hardware compatibility.
 
 ### 3.2 Non-Negotiable Quality Gates
 1. **100% Code Coverage Guardrail:** Asynchronous flows in ViewModels must be tested via `Turbine`. This specifically includes verifying multi-emission flow states during reactive ledger updates. Calculations require exhaustive unit coverage.
-2. **Zero-Warning Compilation Policy:** No lint warnings, layout errors, or deprecated `@Composable` usage.
-3. **Local Certification Suite:** Developers must achieve a green status via the automation tool before any Git commit. This suite includes Turbine flow validation and math engine precision checks:
+2. **Zero-Warning Compilation Policy:** No lint warnings, layout errors, or deprecated `@Composable` usage. Enforced via `./gradlew lintDebug`.
+3. **Local Certification Suite:** Developers must achieve a green status via the automation tool before any Git commit. This suite includes Turbine flow validation, math engine precision checks, and primitive float detection:
    ```powershell
    ./certify_build.ps1
    ```
@@ -95,7 +97,7 @@ graph TD
 To ensure structural stability, the analytics feature is deployed in a phased approach:
 
 #### Phase 1: Core Visualization & Precision Aggregation
-- **Charting Engine:** Integration of the **Vico** library for native Compose rendering.
+- **Charting Engine:** Integration of the **Vico** library (v1.15.0) for native Compose rendering.
 - **Precision Data Flow:** All analytics-related data MUST be aggregated at the SQLite level using `strftime` and `GROUP BY` to minimize memory overhead. 
 - **Type Safety:** Absolute enforcement of `BigDecimal` for all chart data points and calculations.
 
@@ -106,8 +108,8 @@ To ensure structural stability, the analytics feature is deployed in a phased ap
 
 ### 3.4 Charting & Visualization Guidelines (Phase 1)
 The application utilizes the **Vico** library for native Jetpack Compose charting.
-- **State Management:** Always utilize `CartesianChartModelProducer` within the ViewModel to maintain chart state across recompositions.
-- **Asynchronous Updates:** Data updates to the chart model MUST be performed via `runTransaction` to offload processing from the Main thread.
+- **State Management:** Always utilize `ChartEntryModelProducer` (v1.x) or `CartesianChartModelProducer` (v2.x+) within the ViewModel to maintain chart state across recompositions.
+- **Asynchronous Updates:** Data updates to the chart model MUST be performed via background dispatchers (e.g., `viewModelScope.launch(Dispatchers.Default)`) to offload processing from the Main thread.
 - **Dynamic Styling:** Implement custom `ColumnProvider` or `LineProvider` for value-based color coding (e.g., distinguishing expense peaks or category segments).
 - **Stability:** Ensure data models passed to Vico are marked as `@Stable` or `@Immutable`.
 
