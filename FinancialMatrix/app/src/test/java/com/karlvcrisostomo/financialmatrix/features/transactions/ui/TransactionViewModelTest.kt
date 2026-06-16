@@ -1,7 +1,6 @@
 package com.karlvcrisostomo.financialmatrix.features.transactions.ui
 
 import androidx.work.WorkManager
-import androidx.work.WorkRequest
 import app.cash.turbine.test
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferences
 import com.karlvcrisostomo.financialmatrix.core.data.UserPreferencesRepository
@@ -41,18 +40,18 @@ class TransactionViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private val mockTransactions = listOf(
-        TransactionEntity(1, "Jollibee", BigDecimal("200.0"), LocalDate.now(), "Food", true, "Primary"),
-        TransactionEntity(2, "Electric Bill", BigDecimal("1500.0"), LocalDate.now(), "Utilities", false, "Primary"),
-        TransactionEntity(3, "Credit Card Payment", BigDecimal("1000.0"), LocalDate.now(), "CC Payment", false, "Primary")
+        TransactionEntity(1, "Jollibee", BigDecimal("200.00"), LocalDate.now(), "Food", true, "Primary"),
+        TransactionEntity(2, "Electric Bill", BigDecimal("1500.00"), LocalDate.now(), "Utilities", false, "Primary"),
+        TransactionEntity(3, "Credit Card Payment", BigDecimal("1000.00"), LocalDate.now(), "CC Payment", false, "Primary")
     )
 
     private val mockIncome = listOf(
-        IncomeEntity(1, "Salary", BigDecimal("5000.0"), LocalDate.now()),
-        IncomeEntity(2, "Freelance", BigDecimal("1200.0"), LocalDate.now()),
-        IncomeEntity(3, "Old Job", BigDecimal("1000.0"), LocalDate.now().minusMonths(2))
+        IncomeEntity(1, "Salary", BigDecimal("5000.00"), LocalDate.now()),
+        IncomeEntity(2, "Freelance", BigDecimal("1200.00"), LocalDate.now()),
+        IncomeEntity(3, "Old Job", BigDecimal("1000.00"), LocalDate.now().minusMonths(2))
     )
 
-    private val mockPreferences = UserPreferences("₱", false, 5000.0)
+    private val mockPreferences = UserPreferences("₱", false, BigDecimal("5000.00"))
 
     @Before
     fun setup() {
@@ -79,8 +78,8 @@ class TransactionViewModelTest {
             val state = awaitItem()
             
             assertEquals(mockTransactions.size, state.transactions.size)
-            assertEquals(1700.0, state.totalSpent, 0.0)
-            assertEquals(6200.0, state.totalIncome, 0.0)
+            assertEquals(BigDecimal("1700.00"), state.totalSpent)
+            assertEquals(BigDecimal("6200.00"), state.totalIncome)
             
             cancelAndIgnoreRemainingEvents()
         }
@@ -89,7 +88,7 @@ class TransactionViewModelTest {
     @Test
     fun `addTransaction for CC Payment calls insertCreditCardPayment`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
-        val payment = TransactionEntity(4, "Card Pay", BigDecimal("500.0"), LocalDate.now(), "CC Payment", false, "Primary", targetCreditCardId = 1L)
+        val payment = TransactionEntity(4, "Card Pay", BigDecimal("500.00"), LocalDate.now(), "CC Payment", false, "Primary", targetCreditCardId = 1L)
 
         viewModel.uiState.test {
             awaitItem() // Skip loading
@@ -107,7 +106,7 @@ class TransactionViewModelTest {
     @Test
     fun `addTransaction throws error when paying CC with another CC`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
-        val invalidPayment = TransactionEntity(4, "Invalid Pay", BigDecimal("500.0"), LocalDate.now(), "CC Payment", true, "Visa")
+        val invalidPayment = TransactionEntity(4, "Invalid Pay", BigDecimal("500.00"), LocalDate.now(), "CC Payment", true, "Visa")
 
         viewModel.uiState.test {
             awaitItem() // Loading
@@ -126,7 +125,7 @@ class TransactionViewModelTest {
     @Test
     fun `addTransaction for Expense with CC calls insertExpenseWithBalanceUpdate with correct ID`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
-        val expense = TransactionEntity(5, "Grocery", BigDecimal("300.0"), LocalDate.now(), "Food", true, "Visa", targetCreditCardId = 2L)
+        val expense = TransactionEntity(5, "Grocery", BigDecimal("300.00"), LocalDate.now(), "Food", true, "Visa", targetCreditCardId = 2L)
 
         viewModel.uiState.test {
             awaitItem() // Loading
@@ -144,7 +143,7 @@ class TransactionViewModelTest {
     @Test
     fun `deleteTransaction for CC Expense calls deleteTransactionWithBalanceUpdate`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
-        val expense = TransactionEntity(10, "Grocery", BigDecimal("300.0"), LocalDate.now(), "Food", true, "Visa", targetCreditCardId = 2L)
+        val expense = TransactionEntity(10, "Grocery", BigDecimal("300.00"), LocalDate.now(), "Food", true, "Visa", targetCreditCardId = 2L)
 
         viewModel.deleteTransaction(expense)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -155,7 +154,7 @@ class TransactionViewModelTest {
     @Test
     fun `deleteTransaction for CC Payment calls deleteTransactionWithBalanceUpdate`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
-        val payment = TransactionEntity(11, "Payment", BigDecimal("500.0"), LocalDate.now(), "CC Payment", false, "Primary", targetCreditCardId = 1L)
+        val payment = TransactionEntity(11, "Payment", BigDecimal("500.00"), LocalDate.now(), "CC Payment", false, "Primary", targetCreditCardId = 1L)
 
         viewModel.deleteTransaction(payment)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -166,7 +165,7 @@ class TransactionViewModelTest {
     @Test
     fun `deleteTransaction for Standard Expense calls standard delete`() = runTest {
         val viewModel = TransactionViewModel(repository, incomeRepository, recurringRepo, preferencesRepository, workManager, ValidateTransactionSourceUseCase(), testDispatcher)
-        val expense = TransactionEntity(12, "Cash Snack", BigDecimal("50.0"), LocalDate.now(), "Food", false, "Primary")
+        val expense = TransactionEntity(12, "Cash Snack", BigDecimal("50.00"), LocalDate.now(), "Food", false, "Primary")
 
         viewModel.deleteTransaction(expense)
         testDispatcher.scheduler.advanceUntilIdle()

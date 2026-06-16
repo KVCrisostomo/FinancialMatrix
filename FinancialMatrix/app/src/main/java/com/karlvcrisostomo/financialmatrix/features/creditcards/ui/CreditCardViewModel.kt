@@ -83,10 +83,10 @@ class CreditCardViewModel(
             card = card,
             statementWindowStart = statementWindowStart,
             statementWindowEnd = statementWindowEnd,
-            statementBalance = statementBalance.toDouble(),
-            currentBalance = currentBalance.toDouble(),
-            remainingLimit = remainingLimit.toDouble(),
-            utilizationPercentage = utilization.toDouble()
+            statementBalance = statementBalance,
+            currentBalance = currentBalance,
+            remainingLimit = remainingLimit,
+            utilizationPercentage = utilization
         )
     }
 

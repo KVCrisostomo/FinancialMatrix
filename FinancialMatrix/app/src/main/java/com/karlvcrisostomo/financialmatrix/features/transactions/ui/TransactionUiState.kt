@@ -11,8 +11,8 @@ enum class TransactionSortOrder(val displayName: String) {
 }
 
 data class SavingsUiState(
-    val netSavings: Double = 0.0,
-    val savingsRate: Double = 0.0,
+    val netSavings: java.math.BigDecimal = java.math.BigDecimal.ZERO,
+    val savingsRate: java.math.BigDecimal = java.math.BigDecimal.ZERO,
     val isLoading: Boolean = false
 )
 
@@ -26,13 +26,13 @@ data class TransactionUiState(
     val userPreferences: UserPreferences = UserPreferences(
         currencySymbol = "₱",
         defaultIsCreditCard = false,
-        monthlyBudgetLimit = 5000.0
+        monthlyBudgetLimit = java.math.BigDecimal("5000.00")
     ),
-    val totalSpent: Double = 0.0,
-    val totalIncome: Double = 0.0,
-    val cashSpent: Double = 0.0,
-    val creditSpent: Double = 0.0,
-    val categoryAmounts: Map<String, Double> = emptyMap(),
+    val totalSpent: java.math.BigDecimal = java.math.BigDecimal.ZERO,
+    val totalIncome: java.math.BigDecimal = java.math.BigDecimal.ZERO,
+    val cashSpent: java.math.BigDecimal = java.math.BigDecimal.ZERO,
+    val creditSpent: java.math.BigDecimal = java.math.BigDecimal.ZERO,
+    val categoryAmounts: Map<String, java.math.BigDecimal> = emptyMap(),
     val availableCategories: List<String> = emptyList(),
     val errorMessage: String? = null
 )

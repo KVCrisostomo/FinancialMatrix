@@ -80,11 +80,11 @@ class CreditCardViewModelTest {
             
             assertEquals("Visa Gold", stats.card.name)
             // Total current balance for Visa Gold (stored in card entity)
-            assertEquals(3000.0, stats.currentBalance, 0.0)
+            assertEquals(BigDecimal("3000.0"), stats.currentBalance)
             // Statement balance for last period (April 16 - May 15) contains 2000.0
-            assertEquals(2000.0, stats.statementBalance, 0.0)
-            assertEquals(47000.0, stats.remainingLimit, 0.0)
-            assertTrue(stats.utilizationPercentage > 0)
+            assertEquals(BigDecimal("2000.0"), stats.statementBalance)
+            assertEquals(BigDecimal("47000.0"), stats.remainingLimit)
+            assertTrue(stats.utilizationPercentage > BigDecimal.ZERO)
         }
     }
 

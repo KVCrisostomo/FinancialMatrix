@@ -28,7 +28,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -39,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karlvcrisostomo.financialmatrix.core.security.BiometricAuthenticator
 import com.karlvcrisostomo.financialmatrix.features.creditcards.ui.CreditCardViewModel
 import com.karlvcrisostomo.financialmatrix.features.transactions.ui.TransactionScreen
@@ -76,7 +76,7 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             FinancialMatrixTheme {
-                val ccUiState by creditCardViewModel.uiState.collectAsState()
+                val ccUiState by creditCardViewModel.uiState.collectAsStateWithLifecycle()
                 
                 LaunchedEffect(Unit) {
                     attemptAuthentication()

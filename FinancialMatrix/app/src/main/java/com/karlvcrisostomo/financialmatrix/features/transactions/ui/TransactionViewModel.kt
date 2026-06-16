@@ -120,11 +120,11 @@ class TransactionViewModel(
             selectedCategory = category,
             searchQuery = query,
             userPreferences = preferences,
-            totalSpent = totalSpent.toDouble(),
-            totalIncome = totalIncome.toDouble(),
-            cashSpent = cashSpent.toDouble(),
-            creditSpent = creditSpent.toDouble(),
-            categoryAmounts = categoryAmounts.mapValues { it.value.toDouble() },
+            totalSpent = totalSpent,
+            totalIncome = totalIncome,
+            cashSpent = cashSpent,
+            creditSpent = creditSpent,
+            categoryAmounts = categoryAmounts,
             availableCategories = standardCategories,
             isLoading = false,
             errorMessage = errorMessage
@@ -170,7 +170,7 @@ class TransactionViewModel(
         }
     }
 
-    fun updateMonthlyBudgetLimit(limit: Double) {
+    fun updateMonthlyBudgetLimit(limit: BigDecimal) {
         viewModelScope.launch {
             preferencesRepository.updateMonthlyBudgetLimit(limit)
             triggerBudgetCheck()

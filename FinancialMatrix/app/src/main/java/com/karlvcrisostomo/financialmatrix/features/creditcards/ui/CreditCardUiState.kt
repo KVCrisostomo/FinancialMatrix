@@ -1,16 +1,17 @@
 package com.karlvcrisostomo.financialmatrix.features.creditcards.ui
 
 import com.karlvcrisostomo.financialmatrix.features.creditcards.data.CreditCardEntity
+import java.math.BigDecimal
 import java.time.LocalDate
 
 data class CreditCardStats(
     val card: CreditCardEntity,
     val statementWindowStart: LocalDate,
     val statementWindowEnd: LocalDate,
-    val statementBalance: Double,
-    val currentBalance: Double,
-    val remainingLimit: Double,
-    val utilizationPercentage: Double
+    val statementBalance: BigDecimal,
+    val currentBalance: BigDecimal,
+    val remainingLimit: BigDecimal,
+    val utilizationPercentage: BigDecimal
 )
 
 data class CreditCardUiState(

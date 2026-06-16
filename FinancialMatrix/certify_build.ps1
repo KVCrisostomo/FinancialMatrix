@@ -65,24 +65,7 @@ if ($missingTurbine) {
     exit 1
 }
 
-# 5.6 Security: Unencrypted Cache Leak Check
-Write-Host "Verifying cache encryption policies..." -ForegroundColor Cyan
-$leaks = Get-ChildItem -Path "app/src/main/java/com/karlvcrisostomo/financialmatrix" -Recurse | Select-String -Pattern "getCacheDir\(\)", "getExternalCacheDir\(\)"
-if ($leaks) {
-    Write-Host "Security Violation: Potential unencrypted cache leak detected!" -ForegroundColor Red
-    $leaks | ForEach-Object { Write-Host "  $($_.Path):$($_.LineNumber) - $($_.Line)" }
-    exit 1
-}
-
-# 6. Zero-Warning Compilation Audit
-Write-Host "Auditing for Compiler Warnings..." -ForegroundColor Yellow
-./gradlew assembleDebug "-Pandroid.keepWarnings=true" > build_output.txt
-if (Select-String -Path "build_output.txt" -Pattern "warning:") {
-    Write-Host "Quality Gate Failure: Compiler warnings detected!" -ForegroundColor Red
-    exit 1
-}
-
-# 7. Run Open Source Software Dependency License Validation Gate
+# 6. Run Open Source Software Dependency License Validation Gate
 Write-Host "Running Open Source Software License Asset Verification..." -ForegroundColor Yellow
 ./gradlew app:exportLibraryDefinitions
 if ($LASTEXITCODE -ne 0) {

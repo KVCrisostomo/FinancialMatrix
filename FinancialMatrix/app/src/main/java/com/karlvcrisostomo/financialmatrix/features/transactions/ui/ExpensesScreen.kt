@@ -41,12 +41,18 @@ fun ExpensesScreen(
     val creditSpent = uiState.creditSpent
     val categoryAmounts = uiState.categoryAmounts
     
-    val cashPercentage = if (totalSpent > 0) (cashSpent / totalSpent * 100) else 0.0
-    val creditPercentage = if (totalSpent > 0) (creditSpent / totalSpent * 100) else 0.0
+    val cashPercentage = if (totalSpent > java.math.BigDecimal.ZERO) {
+        cashSpent.divide(totalSpent, 4, java.math.RoundingMode.HALF_EVEN).multiply(java.math.BigDecimal("100")).toDouble()
+    } else 0.0
+    val creditPercentage = if (totalSpent > java.math.BigDecimal.ZERO) {
+        creditSpent.divide(totalSpent, 4, java.math.RoundingMode.HALF_EVEN).multiply(java.math.BigDecimal("100")).toDouble()
+    } else 0.0
 
     val budgetLimit = uiState.userPreferences.monthlyBudgetLimit
-    val remainingBudget = budgetLimit - totalSpent
-    val budgetPercentage = if (budgetLimit > 0) (totalSpent / budgetLimit) else 0.0
+    val remainingBudget = budgetLimit.subtract(totalSpent)
+    val budgetPercentage = if (budgetLimit > java.math.BigDecimal.ZERO) {
+        totalSpent.divide(budgetLimit, 4, java.math.RoundingMode.HALF_EVEN).toDouble()
+    } else 0.0
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -87,7 +93,7 @@ fun ExpensesScreen(
                     }
                 }
                 
-                if (totalSpent > 0) {
+                if (totalSpent > java.math.BigDecimal.ZERO) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = "Spending Distribution", style = MaterialTheme.typography.labelSmall)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -100,7 +106,7 @@ fun ExpensesScreen(
                     )
                 }
                 
-                if (budgetLimit > 0) {
+                if (budgetLimit > java.math.BigDecimal.ZERO) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -117,15 +123,15 @@ fun ExpensesScreen(
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = if (remainingBudget >= 0) "Remaining" else "Over Budget",
+                                text = if (remainingBudget >= java.math.BigDecimal.ZERO) "Remaining" else "Over Budget",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (remainingBudget >= 0) Color.Unspecified else MaterialTheme.colorScheme.error
+                                color = if (remainingBudget >= java.math.BigDecimal.ZERO) Color.Unspecified else MaterialTheme.colorScheme.error
                             )
                             Text(
-                                text = "$currencySymbol${String.format(Locale.US, "%.2f", Math.abs(remainingBudget))}",
+                                text = "$currencySymbol${String.format(Locale.US, "%.2f", remainingBudget.abs())}",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = if (remainingBudget >= 0) Color.Unspecified else MaterialTheme.colorScheme.error
+                                color = if (remainingBudget >= java.math.BigDecimal.ZERO) Color.Unspecified else MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -342,8 +348,8 @@ fun CategoryBadge(category: String) {
 
 @Composable
 fun SpendingDistributionChart(
-    categoryAmounts: Map<String, Double>,
-    totalAmount: Double,
+    categoryAmounts: Map<String, java.math.BigDecimal>,
+    totalAmount: java.math.BigDecimal,
     modifier: Modifier = Modifier
 ) {
     val categoryColors = mapOf(
@@ -361,7 +367,7 @@ fun SpendingDistributionChart(
         val canvasHeight = size.height
 
         categoryAmounts.forEach { (category, amount) ->
-            val fraction = (amount / totalAmount).toFloat()
+            val fraction = amount.divide(totalAmount, 4, java.math.RoundingMode.HALF_EVEN).toFloat()
             val segmentWidth = canvasWidth * fraction
             val color = categoryColors[category] ?: Color.Gray
 

@@ -186,12 +186,12 @@ fun CreditCardSummaryCard(
             }
 
             LinearProgressIndicator(
-                progress = { (stats.utilizationPercentage / 100).coerceIn(0.0, 1.0).toFloat() },
+                progress = { (stats.utilizationPercentage.divide(java.math.BigDecimal("100"), 4, java.math.RoundingMode.HALF_EVEN)).coerceIn(java.math.BigDecimal.ZERO, java.math.BigDecimal.ONE).toFloat() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp)
                     .height(6.dp),
-                color = if (stats.utilizationPercentage > 80) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                color = if (stats.utilizationPercentage > java.math.BigDecimal("80")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )

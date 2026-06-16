@@ -11,11 +11,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+import java.math.BigDecimal
 
 data class UserPreferences(
     val currencySymbol: String,
     val defaultIsCreditCard: Boolean,
-    val monthlyBudgetLimit: Double
+    val monthlyBudgetLimit: BigDecimal
 )
 
 class UserPreferencesRepository(
@@ -24,7 +25,7 @@ class UserPreferencesRepository(
     private object PreferencesKeys {
         val CURRENCY_SYMBOL = stringPreferencesKey("currency_symbol")
         val DEFAULT_IS_CREDIT_CARD = booleanPreferencesKey("default_is_credit_card")
-        val MONTHLY_BUDGET_LIMIT = doublePreferencesKey("monthly_budget_limit")
+        val MONTHLY_BUDGET_LIMIT = stringPreferencesKey("monthly_budget_limit")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = dataStore.data
@@ -38,7 +39,12 @@ class UserPreferencesRepository(
         .map { preferences ->
             val currencySymbol = preferences[PreferencesKeys.CURRENCY_SYMBOL] ?: "₱"
             val defaultIsCreditCard = preferences[PreferencesKeys.DEFAULT_IS_CREDIT_CARD] ?: false
-            val monthlyBudgetLimit = preferences[PreferencesKeys.MONTHLY_BUDGET_LIMIT] ?: 5000.0
+            val monthlyBudgetLimitStr = preferences[PreferencesKeys.MONTHLY_BUDGET_LIMIT] ?: "5000.00"
+            val monthlyBudgetLimit = try {
+                BigDecimal(monthlyBudgetLimitStr)
+            } catch (e: Exception) {
+                BigDecimal("5000.00")
+            }
             UserPreferences(currencySymbol, defaultIsCreditCard, monthlyBudgetLimit)
         }
 
@@ -54,9 +60,9 @@ class UserPreferencesRepository(
         }
     }
 
-    suspend fun updateMonthlyBudgetLimit(limit: Double) {
+    suspend fun updateMonthlyBudgetLimit(limit: BigDecimal) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.MONTHLY_BUDGET_LIMIT] = limit
+            preferences[PreferencesKeys.MONTHLY_BUDGET_LIMIT] = limit.toPlainString()
         }
     }
 }

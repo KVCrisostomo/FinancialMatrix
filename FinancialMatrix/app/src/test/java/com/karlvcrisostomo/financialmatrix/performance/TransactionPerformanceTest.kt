@@ -52,7 +52,7 @@ class TransactionPerformanceTest {
         )
     }
 
-    private val mockPreferences = UserPreferences("₱", false, 5000.0)
+    private val mockPreferences = UserPreferences("₱", false, BigDecimal("5000.00"))
 
     @Before
     fun setup() {

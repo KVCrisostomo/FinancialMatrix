@@ -21,6 +21,7 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
    * **Atomic Ledger Rule:** All multi-entity updates (e.g., inserting a transaction while updating a Credit Card balance) MUST be wrapped in a Room `@Transaction` block to ensure atomicity. If any part fails, the entire ledger adjustment must roll back.
    * **Schema Versioning & Migration Rule:** Any modification to the database structural design (adding tables, altering columns, changing indices) MUST increment the database version and be paired with an explicit, hand-crafted Room `Migration` implementation.
    * **Destructive Fallback Prohibition:** The use of `fallbackToDestructiveMigration()` is strictly prohibited across all tracking branches. Every schema shift must safely transform existing user records without data truncation or ledger zeroing.
+   * **Aggregation Efficiency Rule:** Large dataset aggregations (Weekly, Monthly, Yearly) MUST be handled via optimized SQLite/Room queries (e.g., using `strftime` for date grouping) rather than in-memory Kotlin collections to optimize memory footprint and prevent UI jank.
 - **Repository:** Wraps DAOs and provides a clean API to the Domain/Presentation layers.
 - **ViewModel:** Consumes multiple repository flows, using combine to merge data into layout-specific states (e.g., TransactionUiState solely for row processing, and an isolated state stream for the `SavingsDashboard.kt` component within the income ledger context).
 - **UI (Compose):** Collects the `StateFlow` via `collectAsStateWithLifecycle()` to trigger recompositions.
@@ -29,9 +30,17 @@ Data flows reactively from the local Room database to the UI using Kotlin `State
 - **Dispatchers.IO:** Mandatory for all database transactions.
 - **Dispatchers.Default:** Reserved for heavy arithmetic (using `BigDecimal`), filtering, and sorting within the ViewModels to keep the Main thread responsive.
 - **Main Thread:** Restricted to UI rendering and event handling only.
-- **Financial Precision:** Prohibit the use of `Float` or `Double` for financial calculations. All currency values MUST be handled via `java.math.BigDecimal` to ensure absolute precision, mapped via Room `TypeConverters`.
+- **Financial Precision:** Prohibit the use of `Float` or `Double` for financial calculations. All currency values MUST be handled via `java.math.BigDecimal` to ensure absolute precision, mapped via Room `TypeConverters`. Use `RoundingMode.HALF_EVEN` (Banker's Rounding) for all division operations to prevent cumulative rounding errors. This applies strictly to all aggregation logic and chart data point calculations. **Rule:** When performing SQLite-level aggregations on `BigDecimal` stored as `TEXT`, avoid `CAST(... AS REAL)` as it introduces floating-point precision loss; instead, perform precision-safe math or consider integer-based storage (`Long` cents) if SQLite summation is mandatory.
 
-### 1.4 Navigation Scaffolding
+### 1.4 Hardware & Window Security
+- **Secure Windowing:** All financial ledger screens must be protected by `WindowManager.LayoutParams.FLAG_SECURE`. This prevents system-level screenshots, screen recording, and exposure in the Recents/Background apps overview.
+- **Biometric Entry:** Entry to the main ledger is gated by a biometric authentication prompt (`PIN 1236` or Hardware Biometric). This state is ephemeral and not persisted to disk.
+
+### 1.5 Data Privacy & Encryption
+- **Database Encryption:** All local data storage (Room DB) is encrypted at rest using **SQLCipher**. 
+- **Deterministic Storage:** `BigDecimal` values are stored as `TEXT` in SQLite. Room `TypeConverters` must use `.toPlainString()` during serialization to ensure deterministic storage across locales and platforms.
+
+### 1.6 Navigation Scaffolding
 - **Right-Side Navigation:** The `ModalNavigationDrawer` is anchored to and slides exclusively from the **Right edge** of the display.
 - **Ergonomic Alignment:** This anchors the dashboard hub to the top-right 3-bar menu action icon, ensuring a consistent ergonomic interaction model.
 
@@ -81,6 +90,32 @@ graph TD
    ```powershell
    ./certify_build.ps1
    ```
+
+### 3.3 Transaction History & Analytics Release Roadmap
+To ensure structural stability, the analytics feature is deployed in a phased approach:
+
+#### Phase 1: Core Visualization & Precision Aggregation
+- **Charting Engine:** Integration of the **Vico** library for native Compose rendering.
+- **Precision Data Flow:** All analytics-related data MUST be aggregated at the SQLite level using `strftime` and `GROUP BY` to minimize memory overhead. 
+- **Type Safety:** Absolute enforcement of `BigDecimal` for all chart data points and calculations.
+
+#### Phase 2: Background Synchronization & Resilience
+- **WorkManager Integration:** Offloading heavy reconciliation and data syncing to `AndroidX WorkManager`.
+- **Sync Policies:** Periodic tasks must utilize `UNMETERED` network constraints and `EXPONENTIAL` backoff.
+- **Retry Capping:** Workers must manually monitor `runAttemptCount` and fail after 5 attempts to prevent battery drain.
+
+### 3.4 Charting & Visualization Guidelines (Phase 1)
+The application utilizes the **Vico** library for native Jetpack Compose charting.
+- **State Management:** Always utilize `CartesianChartModelProducer` within the ViewModel to maintain chart state across recompositions.
+- **Asynchronous Updates:** Data updates to the chart model MUST be performed via `runTransaction` to offload processing from the Main thread.
+- **Dynamic Styling:** Implement custom `ColumnProvider` or `LineProvider` for value-based color coding (e.g., distinguishing expense peaks or category segments).
+- **Stability:** Ensure data models passed to Vico are marked as `@Stable` or `@Immutable`.
+
+### 3.5 Background Synchronization Strategy (Phase 2)
+Background tasks, such as data reconciliation or recurring transaction processing, are managed via **AndroidX WorkManager**.
+- **Unique Work Enforcement:** Utilize `enqueueUniquePeriodicWork` with `ExistingPeriodicWorkPolicy.KEEP` to prevent redundant task scheduling.
+- **Constraint Optimization:** Heavy sync operations MUST be restricted to `NetworkType.UNMETERED` and `setRequiresCharging(true)` to preserve battery and user data.
+- **Resilience Policy:** Use `BackoffPolicy.EXPONENTIAL` for retries. Workers MUST manually monitor `runAttemptCount` and return `Result.failure()` after a maximum of 5 failed attempts to prevent infinite battery drain.
 
 ---
 

@@ -30,15 +30,15 @@ class IncomeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private val mockTransactions = listOf(
-        TransactionEntity(1, "Jollibee", BigDecimal("200.0"), LocalDate.now(), "Food", true, "Primary"),
-        TransactionEntity(2, "Electric Bill", BigDecimal("1500.0"), LocalDate.now(), "Utilities", false, "Primary"),
-        TransactionEntity(3, "Credit Card Payment", BigDecimal("1000.0"), LocalDate.now(), "CC Payment", false, "Primary")
+        TransactionEntity(1, "Jollibee", BigDecimal("200.00"), LocalDate.now(), "Food", true, "Primary"),
+        TransactionEntity(2, "Electric Bill", BigDecimal("1500.00"), LocalDate.now(), "Utilities", false, "Primary"),
+        TransactionEntity(3, "Credit Card Payment", BigDecimal("1000.00"), LocalDate.now(), "CC Payment", false, "Primary")
     )
 
     private val mockIncome = listOf(
-        IncomeEntity(1, "Salary", BigDecimal("5000.0"), LocalDate.now()),
-        IncomeEntity(2, "Freelance", BigDecimal("1200.0"), LocalDate.now()),
-        IncomeEntity(3, "Old Job", BigDecimal("1000.0"), LocalDate.now().minusMonths(2))
+        IncomeEntity(1, "Salary", BigDecimal("5000.00"), LocalDate.now()),
+        IncomeEntity(2, "Freelance", BigDecimal("1200.00"), LocalDate.now()),
+        IncomeEntity(3, "Old Job", BigDecimal("1000.00"), LocalDate.now().minusMonths(2))
     )
 
     @Before
@@ -68,10 +68,10 @@ class IncomeViewModelTest {
             // Total Income = 5000 + 1200 = 6200.0 (Old Job excluded)
             // Total Spent (excluding CC Payment) = 200 + 1500 = 1700.0
             // Net Savings = 6200 - 1700 = 4500.0
-            assertEquals("Incorrect Net Savings calculation", 4500.0, successState.netSavings, 0.0)
+            assertEquals("Incorrect Net Savings calculation", BigDecimal("4500.00"), successState.netSavings)
             
             // Savings Rate = (4500 / 6200) * 100 approx 72.58%
-            assertEquals("Incorrect Savings Rate calculation", 72.58, successState.savingsRate, 0.01)
+            assertEquals("Incorrect Savings Rate calculation", BigDecimal("72.5800"), successState.savingsRate)
             assertEquals("Success state should not be loading", false, successState.isLoading)
             
             cancelAndIgnoreRemainingEvents()

@@ -13,17 +13,19 @@ import com.karlvcrisostomo.financialmatrix.ui.theme.SuccessGreen
 import com.karlvcrisostomo.financialmatrix.ui.theme.WarningOrange
 import java.util.Locale
 
+import java.math.BigDecimal
+
 @Composable
 fun SavingsDashboard(
-    netSavings: Double,
-    savingsRate: Double,
+    netSavings: BigDecimal,
+    savingsRate: BigDecimal,
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
     val healthColor = when {
-        savingsRate >= 30 -> SuccessGreen // Strong Green
-        savingsRate >= 10 -> WarningOrange // Orange
-        savingsRate > 0 -> AlertRed // Red
+        savingsRate >= BigDecimal("30") -> SuccessGreen // Strong Green
+        savingsRate >= BigDecimal("10") -> WarningOrange // Orange
+        savingsRate > BigDecimal.ZERO -> AlertRed // Red
         else -> Color.Gray
     }
 
@@ -49,7 +51,7 @@ fun SavingsDashboard(
                         text = "$currencySymbol${String.format(Locale.US, "%.2f", netSavings)}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (netSavings >= 0) SuccessGreen else MaterialTheme.colorScheme.error
+                        color = if (netSavings >= BigDecimal.ZERO) SuccessGreen else MaterialTheme.colorScheme.error
                     )
                 }
                 
@@ -71,7 +73,7 @@ fun SavingsDashboard(
             Spacer(modifier = Modifier.height(12.dp))
 
             LinearProgressIndicator(
-                progress = { (savingsRate / 100).coerceIn(0.0, 1.0).toFloat() },
+                progress = { (savingsRate.divide(BigDecimal("100"), 4, java.math.RoundingMode.HALF_EVEN)).coerceIn(BigDecimal.ZERO, BigDecimal.ONE).toFloat() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),
@@ -82,9 +84,9 @@ fun SavingsDashboard(
             
             Text(
                 text = when {
-                    savingsRate >= 30 -> "Excellent! You are building wealth rapidly."
-                    savingsRate >= 10 -> "Good progress. Keep it up!"
-                    savingsRate > 0 -> "Tight margins. Look for ways to save."
+                    savingsRate >= BigDecimal("30") -> "Excellent! You are building wealth rapidly."
+                    savingsRate >= BigDecimal("10") -> "Good progress. Keep it up!"
+                    savingsRate > BigDecimal.ZERO -> "Tight margins. Look for ways to save."
                     else -> "Warning: Spending exceeded income this month."
                 },
                 style = MaterialTheme.typography.labelSmall,

@@ -53,8 +53,8 @@ class IncomeViewModel(
         }
 
         SavingsUiState(
-            netSavings = netSavings.toDouble(),
-            savingsRate = savingsRate.toDouble(),
+            netSavings = netSavings,
+            savingsRate = savingsRate,
             isLoading = false
         )
     }
